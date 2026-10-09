@@ -1,0 +1,1213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cold-Process Soap Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+  /* Layout: a bench notebook of controls on the left, a weigh-out sheet pinned on the right. */
+  :root {
+    --ground: #eef0ea;
+    --surface: #fcfcf9;
+    --well: #f3f5ee;
+    --ink: #1a1f17;
+    --ink-2: #4a5345;
+    --muted: #6f776a;
+    --line: #dcdfd3;
+    --track: #dfe3d6;
+    --accent: #46651a;
+    --accent-soft: #e6ecd9;
+    --warn: #8a4b00;
+    --warn-soft: #fbefd9;
+    --warn-line: #e9c98f;
+    --ok: #2f6a1d;
+    --ok-soft: #e4efdb;
+
+    /* Chart series, in the validated adjacency order olive > coconut > castor > water > lye > EO */
+    --s-olive: #5f8a1e;
+    --s-coconut: #c9418a;
+    --s-castor: #eda100;
+    --s-water: #2a78d6;
+    --s-lye: #eb6834;
+    --s-eo: #7656cf;
+
+    --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #10120f; --surface: #1a1d18; --well: #22261f;
+      --ink: #edf0e8; --ink-2: #bcc3b4; --muted: #8d9587; --line: #2f3429; --track: #343b2e;
+      --accent: #a8c66b; --accent-soft: #2a3421;
+      --warn: #f2b65a; --warn-soft: #2d2413; --warn-line: #5c4720;
+      --ok: #95cf72; --ok-soft: #1f2c19;
+      --s-olive: #6c9a26; --s-coconut: #d55181; --s-castor: #c98500;
+      --s-water: #3987e5; --s-lye: #d95926; --s-eo: #9085e9;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #10120f; --surface: #1a1d18; --well: #22261f;
+    --ink: #edf0e8; --ink-2: #bcc3b4; --muted: #8d9587; --line: #2f3429; --track: #343b2e;
+    --accent: #a8c66b; --accent-soft: #2a3421;
+    --warn: #f2b65a; --warn-soft: #2d2413; --warn-line: #5c4720;
+    --ok: #95cf72; --ok-soft: #1f2c19;
+    --s-olive: #6c9a26; --s-coconut: #d55181; --s-castor: #c98500;
+    --s-water: #3987e5; --s-lye: #d95926; --s-eo: #9085e9;
+    color-scheme: dark;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2 { text-wrap: balance; }
+  :where(button, a, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Range sliders: the filled part of the track takes --fill, the thumb sits on --surface. */
+  .range {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    height: 22px;
+    background: transparent;
+    cursor: pointer;
+    --pct: 50%;
+    --fill: var(--accent);
+  }
+  .range::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(to right, var(--fill) 0 var(--pct), var(--track) var(--pct) 100%);
+  }
+  .range::-moz-range-track { height: 6px; border-radius: 999px; background: var(--track); }
+  .range::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--fill); }
+  .range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--fill);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.18);
+    transition: box-shadow 120ms;
+  }
+  .range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 2px solid var(--fill);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.18);
+  }
+  .range:focus-visible { outline: none; }
+  .range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--accent-soft), 0 0 0 6px var(--accent); }
+  .range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--accent-soft), 0 0 0 6px var(--accent); }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+  @keyframes rise { from { transform: translateY(100%); } to { transform: none; } }
+  .rise { animation: rise 180ms ease-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .rise { animation: none; }
+    * { transition: none !important; }
+  }
+</style>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ground: 'var(--ground)',
+          surface: 'var(--surface)',
+          well: 'var(--well)',
+          ink: 'var(--ink)',
+          'ink-2': 'var(--ink-2)',
+          muted: 'var(--muted)',
+          line: 'var(--line)',
+          track: 'var(--track)',
+          accent: 'var(--accent)',
+          'accent-soft': 'var(--accent-soft)',
+          warn: 'var(--warn)',
+          'warn-soft': 'var(--warn-soft)',
+          'warn-line': 'var(--warn-line)',
+          ok: 'var(--ok)',
+          'ok-soft': 'var(--ok-soft)',
+        },
+        fontFamily: {
+          display: ['var(--font-display)'],
+          sans: ['var(--font-sans)'],
+          mono: ['var(--font-mono)'],
+        },
+      },
+    },
+  };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.2/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+/*
+ * SoapCalculator is self-contained. To move it into a bundled React + Tailwind
+ * project, copy everything above the render call, import the hooks from 'react',
+ * and carry over the CSS tokens and the Tailwind colour/font extension above.
+ */
+const { useState, useMemo, useEffect, useRef } = React;
+
+// ---- Recipe data ------------------------------------------------------------
+
+const OILS = [
+  { key: 'olive',   name: 'Olive oil',         sap: 0.135, color: 'var(--s-olive)' },
+  { key: 'coconut', name: 'Coconut oil (76°)', sap: 0.183, color: 'var(--s-coconut)' },
+  { key: 'castor',  name: 'Castor oil',        sap: 0.128, color: 'var(--s-castor)' },
+];
+const COLORS = { water: 'var(--s-water)', lye: 'var(--s-lye)', eo: 'var(--s-eo)' };
+
+const PRESETS = [
+  { id: 'classic',    name: 'Classic',        pct: { olive: 70, coconut: 25, castor: 5 } },
+  { id: 'high-olive', name: 'High Olive',     pct: { olive: 80, coconut: 15, castor: 5 } },
+  { id: 'castile',    name: 'Castile Hybrid', pct: { olive: 85, coconut: 10, castor: 5 } },
+];
+
+// The batch can be entered in any of these; every calculation runs in grams.
+const UNITS = {
+  g:  { gramsPer: 1,            decimals: 1 },
+  oz: { gramsPer: 28.349523125, decimals: 2 },
+  lb: { gramsPer: 453.59237,    decimals: 3 },
+};
+
+const LIMITS = {
+  oilGrams:   { min: 50, max: 20000, sliderMin: 100, sliderMax: 5000, step: 25 },
+  waterRatio: { min: 1.5, max: 3, step: 0.1 },
+  pct:        { min: 0, max: 100, step: 1 },
+  superfat:   { min: 4, max: 8, step: 0.5 },
+  eoRate:     { min: 15, max: 45, step: 1 },
+};
+
+const DEFAULTS = {
+  oilGrams: 1000,
+  unit: 'g',
+  waterRatio: 2,
+  pct: { olive: 80, coconut: 15, castor: 5 },
+  superfat: 5,
+  eoRate: 30,
+};
+
+const STORAGE_KEY = 'cp-soap-calculator:v1';
+
+// ---- Calculation engine -----------------------------------------------------
+
+const sum = (values) => values.reduce((a, b) => a + b, 0);
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+const round1 = (v) => Math.round(v * 10) / 10;
+
+function calculateRecipe({ oilGrams, pct, superfat, waterRatio, eoRate }) {
+  const oils = OILS.map((oil) => {
+    const grams = oilGrams * (pct[oil.key] / 100);
+    return { ...oil, pct: pct[oil.key], grams, lye: grams * oil.sap };
+  });
+  const pctTotal = sum(oils.map((o) => o.pct));
+  const oilTotal = sum(oils.map((o) => o.grams));
+  const unadjustedLye = sum(oils.map((o) => o.lye));
+  const lye = unadjustedLye * (1 - superfat / 100);
+  const water = lye * waterRatio;
+  const eo = oilGrams * (eoRate / 1000);
+  return {
+    oils,
+    pctTotal,
+    oilTotal,
+    unadjustedLye,
+    lye,
+    water,
+    eo,
+    total: oilTotal + lye + water + eo,
+    lyeConcentration: lye + water > 0 ? (lye / (lye + water)) * 100 : 0,
+    balanced: Math.abs(pctTotal - 100) < 0.001,
+  };
+}
+
+// Scale the blend proportionally to 100%, pushing any rounding drift onto the largest oil.
+function normalizeBlend(pct) {
+  const total = sum(OILS.map((o) => pct[o.key]));
+  if (total <= 0) return { ...DEFAULTS.pct };
+  const next = Object.fromEntries(OILS.map((o) => [o.key, round1((pct[o.key] / total) * 100)]));
+  const drift = round1(100 - sum(Object.values(next)));
+  if (drift !== 0) {
+    const largest = OILS.reduce((a, o) => (next[o.key] > next[a.key] ? o : a), OILS[0]);
+    next[largest.key] = round1(next[largest.key] + drift);
+  }
+  return next;
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return DEFAULTS;
+    const saved = JSON.parse(raw);
+    const num = (v, lim, fallback) => (Number.isFinite(v) ? clamp(v, lim.min, lim.max) : fallback);
+    return {
+      oilGrams: num(saved.oilGrams, LIMITS.oilGrams, DEFAULTS.oilGrams),
+      unit: UNITS[saved.unit] ? saved.unit : DEFAULTS.unit,
+      waterRatio: num(saved.waterRatio, LIMITS.waterRatio, DEFAULTS.waterRatio),
+      superfat: num(saved.superfat, LIMITS.superfat, DEFAULTS.superfat),
+      eoRate: num(saved.eoRate, LIMITS.eoRate, DEFAULTS.eoRate),
+      pct: Object.fromEntries(
+        OILS.map((o) => [o.key, num(saved.pct?.[o.key], LIMITS.pct, DEFAULTS.pct[o.key])])
+      ),
+    };
+  } catch {
+    return DEFAULTS;
+  }
+}
+
+// ---- Formatting -------------------------------------------------------------
+
+const grams2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtG = (g) => grams2.format(g);
+const fmtPct = (p, digits = 1) =>
+  `${new Intl.NumberFormat('en-US', { maximumFractionDigits: digits }).format(p)}%`;
+const fmtUnit = (g, unit) => {
+  const { gramsPer, decimals } = UNITS[unit];
+  const digits = unit === 'g' ? 0 : decimals;
+  return `${new Intl.NumberFormat('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(g / gramsPer)} ${unit}`;
+};
+
+function recipeText(r, s) {
+  const line = (label, value) => `${label.padEnd(28, ' ')}${value.padStart(12, ' ')}`;
+  return [
+    'Cold-process soap recipe',
+    `${fmtG(s.oilGrams)} g oils · ${fmtPct(s.superfat)} superfat · ${s.waterRatio.toFixed(1)}:1 water to lye`,
+    '',
+    'OILS',
+    ...r.oils.map((o) => line(`${o.name} ${fmtPct(o.pct)}`, `${fmtG(o.grams)} g`)),
+    '',
+    'LYE SOLUTION',
+    line('NaOH lye', `${fmtG(r.lye)} g`),
+    line('Distilled water', `${fmtG(r.water)} g`),
+    '',
+    'ADDITIVES',
+    line(`Essential oil (${s.eoRate} g/kg)`, `${fmtG(r.eo)} g`),
+    '',
+    line('Total wet batch', `${fmtG(r.total)} g`),
+  ].join('\n');
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function useInView(ref) {
+  const [inView, setInView] = useState(true);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver(([entry]) => setInView(entry.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref]);
+  return inView;
+}
+
+// ---- Icons ------------------------------------------------------------------
+
+const Icon = ({ d, className = 'h-4 w-4' }) => (
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+    {d}
+  </svg>
+);
+const CheckIcon = (p) => <Icon {...p} d={<path d="M3.5 8.5l3 3 6-7" />} />;
+const WarnIcon = (p) => <Icon {...p} d={<><path d="M8 2.2l6.3 11.3H1.7z" /><path d="M8 6.6v3.1M8 11.7v.1" /></>} />;
+const CopyIcon = (p) => <Icon {...p} d={<><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M10.5 3.5v-.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h.5" /></>} />;
+const ResetIcon = (p) => <Icon {...p} d={<><path d="M2.8 8a5.2 5.2 0 1 0 1.6-3.8" /><path d="M2.6 2.4v3h3" /></>} />;
+const DownIcon = (p) => <Icon {...p} d={<path d="M8 3v10M3.5 8.5L8 13l4.5-4.5" />} />;
+
+// ---- Inputs -----------------------------------------------------------------
+
+function NumberInput({ id, value, onCommit, min, max, step, decimals = 1, suffix, widthClass = 'w-16' }) {
+  const format = (v) => String(Number(v.toFixed(decimals)));
+  const [draft, setDraft] = useState(() => format(value));
+  const [editing, setEditing] = useState(false);
+
+  useEffect(() => {
+    if (!editing) setDraft(format(value));
+  }, [value, editing, decimals]);
+
+  const commitDraft = () => {
+    setEditing(false);
+    if (draft === format(value)) return;
+    const n = parseFloat(draft);
+    const next = Number.isFinite(n) ? clamp(n, min, max) : value;
+    onCommit(next);
+    setDraft(format(next));
+  };
+
+  return (
+    <div className="flex items-center rounded-md border border-line bg-well transition-colors focus-within:border-accent focus-within:ring-2 focus-within:ring-accent-soft">
+      <input
+        id={id}
+        type="number"
+        inputMode="decimal"
+        min={min}
+        max={max}
+        step={step}
+        value={draft}
+        onFocus={() => setEditing(true)}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          const n = parseFloat(e.target.value);
+          if (Number.isFinite(n) && n >= min && n <= max) onCommit(n);
+        }}
+        onBlur={commitDraft}
+        onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+        className={`${widthClass} bg-transparent py-1.5 pl-2 text-right font-mono text-sm tabular-nums text-ink outline-none`}
+      />
+      {suffix && <span className="select-none whitespace-nowrap pl-1 pr-2 text-sm text-muted">{suffix}</span>}
+    </div>
+  );
+}
+
+function Range({ id, value, min, max, step, onChange, fill, label, valueText }) {
+  const v = clamp(value, min, max);
+  const pct = ((v - min) / (max - min)) * 100;
+  return (
+    <input
+      id={id}
+      type="range"
+      className="range"
+      min={min}
+      max={max}
+      step={step}
+      value={v}
+      onChange={(e) => onChange(parseFloat(e.target.value))}
+      aria-label={label}
+      aria-valuetext={valueText}
+      style={{ '--pct': `${pct}%`, ...(fill ? { '--fill': fill } : null) }}
+    />
+  );
+}
+
+function Control({ htmlFor, label, input, slider, footer }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor={htmlFor} className="flex min-w-0 items-center gap-2 text-sm font-medium text-ink">
+          {label}
+        </label>
+        <div className="flex shrink-0 items-center gap-2">{input}</div>
+      </div>
+      {slider}
+      {footer && (
+        <div className={`grid items-baseline gap-3 text-xs text-muted ${footer.length === 3 ? 'grid-cols-[1fr_auto_1fr]' : 'grid-cols-2'}`}>
+          {footer.map((part, i) => (
+            <span key={i} className={i === 1 && footer.length === 3 ? 'text-center text-ink-2' : i === footer.length - 1 ? 'text-right' : ''}>
+              {part}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UnitToggle({ value, onChange }) {
+  return (
+    <div role="radiogroup" aria-label="Batch weight unit" className="flex rounded-md border border-line bg-well p-0.5">
+      {Object.keys(UNITS).map((u) => (
+        <button
+          key={u}
+          type="button"
+          role="radio"
+          aria-checked={value === u}
+          onClick={() => onChange(u)}
+          className={`rounded px-2 py-1 font-mono text-xs transition-colors ${
+            value === u ? 'bg-surface text-ink shadow-sm' : 'text-muted hover:text-ink'
+          }`}
+        >
+          {u}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Section({ id, title, description, badge, children }) {
+  return (
+    <section aria-labelledby={id} className="px-5 py-6 sm:px-6">
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id={id} className="font-display text-lg font-semibold leading-tight text-ink">{title}</h2>
+          {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+        </div>
+        {badge}
+      </div>
+      <div className="flex flex-col gap-6">{children}</div>
+    </section>
+  );
+}
+
+// ---- Oil blend pieces -------------------------------------------------------
+
+function MiniBar({ pct, height = 'h-1.5' }) {
+  return (
+    <span className={`flex w-full gap-[2px] ${height}`} aria-hidden="true">
+      {OILS.filter((o) => pct[o.key] > 0).map((o) => (
+        <span key={o.key} className="block rounded-[1px]" style={{ flexGrow: pct[o.key], flexBasis: 0, background: o.color }} />
+      ))}
+    </span>
+  );
+}
+
+function PresetButtons({ pct, onApply }) {
+  return (
+    <div role="group" aria-label="Oil blend presets" className="grid grid-cols-3 gap-2">
+      {PRESETS.map((p) => {
+        const active = OILS.every((o) => Math.abs(pct[o.key] - p.pct[o.key]) < 0.001);
+        return (
+          <button
+            key={p.id}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onApply(p.pct)}
+            className={`flex min-w-0 flex-col items-start gap-1 rounded-lg border px-3 pb-3 pt-2.5 text-left transition-colors ${
+              active ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:bg-well'
+            }`}
+          >
+            <span className="font-mono text-sm font-medium tabular-nums text-ink">
+              {OILS.map((o) => p.pct[o.key]).join('/')}
+            </span>
+            <span className="mb-1 truncate text-xs text-ink-2">{p.name}</span>
+            <MiniBar pct={p.pct} />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function BlendStatus({ pct, total, onScale, onBalance }) {
+  const balanced = Math.abs(total - 100) < 0.001;
+  const diff = total - 100;
+  const scaleMax = Math.max(100, total);
+  const canBalance = pct.coconut + pct.castor <= 100;
+  return (
+    <div className={`rounded-lg border px-4 py-3 ${balanced ? 'border-line bg-well' : 'border-warn-line bg-warn-soft'}`}>
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span aria-live="polite" className={`flex items-center gap-1.5 font-medium ${balanced ? 'text-ok' : 'text-warn'}`}>
+          {balanced ? <CheckIcon /> : <WarnIcon />}
+          {balanced
+            ? 'Oils total 100%'
+            : diff < 0
+              ? `${fmtPct(-diff)} short of 100%`
+              : `${fmtPct(diff)} over 100%`}
+        </span>
+        <span className="font-mono tabular-nums text-ink">{fmtPct(total)}</span>
+      </div>
+      <div className="relative mt-2.5 h-2 overflow-hidden rounded-full bg-track" aria-hidden="true">
+        <div className="flex h-full gap-[2px]" style={{ width: `${(total / scaleMax) * 100}%` }}>
+          {OILS.filter((o) => pct[o.key] > 0).map((o) => (
+            <span key={o.key} className="block h-full" style={{ flexGrow: pct[o.key], flexBasis: 0, background: o.color }} />
+          ))}
+        </div>
+        {total > 100 && (
+          <span className="absolute inset-y-0 w-[2px] bg-ink" style={{ left: `calc(${(100 / scaleMax) * 100}% - 1px)` }} />
+        )}
+      </div>
+      {!balanced && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={onScale}
+            disabled={total <= 0}
+            className="rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-surface transition-opacity hover:opacity-90 disabled:opacity-40"
+          >
+            Scale to 100%
+          </button>
+          <button
+            type="button"
+            onClick={onBalance}
+            disabled={!canBalance}
+            className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-well disabled:opacity-40"
+          >
+            Fill the gap with olive oil
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- Chart ------------------------------------------------------------------
+
+function Swatch({ colors }) {
+  return (
+    <span className="flex h-2.5 w-2.5 shrink-0 gap-px overflow-hidden rounded-[2px]" aria-hidden="true">
+      {colors.map((c, i) => <span key={i} className="block h-full flex-1" style={{ background: c }} />)}
+    </span>
+  );
+}
+
+function Ticks() {
+  return (
+    <div className="relative -mt-1 h-4" aria-hidden="true">
+      {[0, 25, 50, 75, 100].map((t) => (
+        <span key={t} className="absolute top-0 h-1.5 w-px bg-line" style={{ left: `calc(${t}% - ${t === 100 ? 1 : 0}px)` }} />
+      ))}
+      <span className="absolute left-0 top-1.5 font-mono text-[10px] text-muted">0%</span>
+      <span className="absolute left-1/2 top-1.5 -translate-x-1/2 font-mono text-[10px] text-muted">50%</span>
+      <span className="absolute right-0 top-1.5 font-mono text-[10px] text-muted">100%</span>
+    </div>
+  );
+}
+
+function StackedBar({ title, note, segments, groups = {}, legend, shareLabel, hoverKey, onHover }) {
+  const shown = segments.filter((s) => s.value > 0);
+  const total = sum(shown.map((s) => s.value));
+  let cursor = 0;
+  const placed = shown.map((s) => {
+    const start = total ? cursor / total : 0;
+    cursor += s.value;
+    return { ...s, start, share: total ? s.value / total : 0 };
+  });
+
+  const isHit = (s) => hoverKey != null && (s.key === hoverKey || s.group === hoverKey);
+  const hits = placed.filter(isHit);
+  let tip = null;
+  if (hits.length) {
+    const first = hits[0];
+    const last = hits[hits.length - 1];
+    const value = sum(hits.map((s) => s.value));
+    tip = {
+      label: hits.length > 1 ? groups[hoverKey] : first.label,
+      value,
+      share: value / total,
+      center: ((first.start + last.start + last.share) / 2) * 100,
+    };
+  }
+  const tipStyle = !tip
+    ? null
+    : tip.center < 18
+      ? { left: 0 }
+      : tip.center > 82
+        ? { right: 0 }
+        : { left: `${tip.center}%`, transform: 'translateX(-50%)' };
+
+  return (
+    <figure className="m-0">
+      <figcaption className="flex items-baseline justify-between gap-3">
+        <span className="text-sm font-medium text-ink">{title}</span>
+        <span className="text-xs text-muted">{note}</span>
+      </figcaption>
+      <div className="relative">
+        {tip && (
+          <div
+            className="pointer-events-none absolute bottom-full z-10 whitespace-nowrap rounded-md border border-line bg-surface px-2.5 py-1.5 shadow-lg"
+            style={tipStyle}
+          >
+            <div className="font-mono text-sm font-semibold tabular-nums text-ink">{fmtG(tip.value)} g</div>
+            <div className="text-xs text-ink-2">{tip.label} · {fmtPct(tip.share * 100)} {shareLabel}</div>
+          </div>
+        )}
+        <div className="flex gap-[2px]" onMouseLeave={() => onHover(null)}>
+          {placed.map((s, i) => (
+            <div
+              key={s.key}
+              tabIndex={0}
+              role="img"
+              aria-label={`${s.label}: ${fmtG(s.value)} grams, ${fmtPct(s.share * 100)} ${shareLabel}`}
+              onMouseEnter={() => onHover(s.key)}
+              onFocus={() => onHover(s.key)}
+              onBlur={() => onHover(null)}
+              className="min-w-[3px] py-2 transition-[flex-grow] duration-300 ease-out"
+              style={{ flexGrow: s.value, flexBasis: 0 }}
+            >
+              <span
+                className={`block h-6 transition-opacity duration-150 ${i === placed.length - 1 ? 'rounded-r-[4px]' : ''} ${
+                  hits.length && !isHit(s) ? 'opacity-30' : ''
+                }`}
+                style={{ background: s.color }}
+              />
+            </div>
+          ))}
+        </div>
+        <Ticks />
+      </div>
+      <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5">
+        {legend.map((item) => (
+          <li
+            key={item.key}
+            className="flex items-center gap-1.5 text-xs"
+            onMouseEnter={() => onHover(item.key)}
+            onMouseLeave={() => onHover(null)}
+          >
+            <Swatch colors={item.colors} />
+            <span className="text-ink-2">{item.label}</span>
+            <span className="font-mono tabular-nums text-ink">{fmtPct(total ? (item.value / total) * 100 : 0)}</span>
+          </li>
+        ))}
+      </ul>
+    </figure>
+  );
+}
+
+// ---- Recipe output ----------------------------------------------------------
+
+function GroupRow({ label }) {
+  return (
+    <tr>
+      <th colSpan={3} scope="colgroup" className="px-3 pb-1.5 pt-5 text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
+        {label}
+      </th>
+    </tr>
+  );
+}
+
+function ItemRow({ id, color, name, detail, pct, grams, unit, strong, hoverKey, onHover }) {
+  return (
+    <tr
+      onMouseEnter={() => onHover(id)}
+      onMouseLeave={() => onHover(null)}
+      className={`border-t border-line transition-colors ${hoverKey === id ? 'bg-well' : ''}`}
+    >
+      <th scope="row" className="py-2.5 pl-3 pr-2 text-left align-top font-normal">
+        <div className="flex items-start gap-2.5">
+          {color ? (
+            <span className="mt-[5px] h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ background: color }} aria-hidden="true" />
+          ) : (
+            <span className="w-2.5 shrink-0" aria-hidden="true" />
+          )}
+          <div className="min-w-0">
+            <div className={strong ? 'font-semibold text-ink' : 'text-ink'}>{name}</div>
+            {detail && <div className="mt-0.5 text-xs text-muted">{detail}</div>}
+          </div>
+        </div>
+      </th>
+      <td className="px-2 py-2.5 text-right align-top font-mono tabular-nums text-ink-2">{pct}</td>
+      <td className="py-2.5 pl-2 pr-3 text-right align-top">
+        <div className={`whitespace-nowrap font-mono tabular-nums text-ink ${strong ? 'text-[15px] font-semibold' : ''}`}>
+          {fmtG(grams)}<span className="ml-1 font-normal text-muted">g</span>
+        </div>
+        {unit !== 'g' && <div className="whitespace-nowrap font-mono text-xs tabular-nums text-muted">{fmtUnit(grams, unit)}</div>}
+      </td>
+    </tr>
+  );
+}
+
+function RecipeCard({ r, state, hoverKey, onHover, cardRef }) {
+  const { oilGrams, unit, superfat, waterRatio, eoRate } = state;
+  const [copyState, setCopyState] = useState('idle');
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const onCopy = async () => {
+    const ok = await copyText(recipeText(r, state));
+    setCopyState(ok ? 'copied' : 'failed');
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopyState('idle'), 2200);
+  };
+  const ofOils = (g) => fmtPct((g / oilGrams) * 100);
+
+  return (
+    <section
+      id="recipe"
+      ref={cardRef}
+      aria-labelledby="recipe-title"
+      className="rounded-xl border border-line bg-surface shadow-[0_1px_2px_rgb(0_0_0/0.04),0_8px_24px_-12px_rgb(0_0_0/0.18)]"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5 sm:px-6 sm:pt-6">
+        <div className="min-w-0">
+          <h2 id="recipe-title" className="font-display text-xl font-semibold leading-tight text-ink">Recipe output</h2>
+          <p className="mt-1 text-sm text-muted">
+            {fmtUnit(oilGrams, 'g')} of oils{unit !== 'g' ? ` (${fmtUnit(oilGrams, unit)})` : ''} · {fmtPct(superfat)} superfat · {waterRatio.toFixed(1)} : 1 water
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onCopy}
+          disabled={!r.balanced}
+          className="flex items-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-well disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {copyState === 'copied' ? <CheckIcon /> : <CopyIcon />}
+          {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy blocked' : 'Copy recipe'}
+        </button>
+      </div>
+
+      {!r.balanced && (
+        <div className="mx-5 mt-4 flex gap-2.5 rounded-lg border border-warn-line bg-warn-soft px-3.5 py-3 text-sm text-warn sm:mx-6">
+          <WarnIcon className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            <strong className="font-semibold">Your oils add up to {fmtPct(r.pctTotal)}.</strong>{' '}
+            These weights use the percentages as entered, so the oils come to {fmtG(r.oilTotal)} g instead of {fmtG(oilGrams)} g.
+            Bring the blend to 100% before you weigh anything.
+          </p>
+        </div>
+      )}
+
+      <div className={`px-2 pb-2 transition-opacity sm:px-3 ${r.balanced ? '' : 'opacity-60'}`}>
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="text-[11px] uppercase tracking-[0.12em] text-muted">
+              <th scope="col" className="px-3 pt-4 text-left font-medium"><span className="sr-only">Ingredient</span></th>
+              <th scope="col" className="whitespace-nowrap px-2 pt-4 text-right font-medium">% of oils</th>
+              <th scope="col" className="px-3 pt-4 text-right font-medium">Weight</th>
+            </tr>
+          </thead>
+          <tbody>
+            <GroupRow label="Oils" />
+            {r.oils.map((o) => (
+              <ItemRow
+                key={o.key}
+                id={o.key}
+                color={o.color}
+                name={o.name}
+                detail={`SAP ${o.sap.toFixed(3)} · needs ${fmtG(o.lye)} g NaOH`}
+                pct={fmtPct(o.pct)}
+                grams={o.grams}
+                unit={unit}
+                hoverKey={hoverKey}
+                onHover={onHover}
+              />
+            ))}
+            <ItemRow id="oils" name="All oils" pct={fmtPct(r.pctTotal)} grams={r.oilTotal} unit={unit} hoverKey={hoverKey} onHover={onHover} />
+
+            <GroupRow label="Lye solution" />
+            <ItemRow
+              id="lye"
+              color={COLORS.lye}
+              name="NaOH lye"
+              detail={`${fmtG(r.unadjustedLye)} g at 0% superfat, less ${fmtPct(superfat)}`}
+              pct={ofOils(r.lye)}
+              grams={r.lye}
+              unit={unit}
+              strong
+              hoverKey={hoverKey}
+              onHover={onHover}
+            />
+            <ItemRow
+              id="water"
+              color={COLORS.water}
+              name="Distilled water"
+              detail={`${waterRatio.toFixed(1)} : 1 water to lye · ${r.lyeConcentration.toFixed(1)}% lye concentration`}
+              pct={ofOils(r.water)}
+              grams={r.water}
+              unit={unit}
+              strong
+              hoverKey={hoverKey}
+              onHover={onHover}
+            />
+            <tr>
+              <td colSpan={3} className="px-3 pb-1 pt-2">
+                <p className="flex items-start gap-2 text-xs text-ink-2">
+                  <WarnIcon className="mt-px h-3.5 w-3.5 shrink-0 text-warn" />
+                  Pour the lye into the water, never water onto lye. Wear goggles and gloves.
+                </p>
+              </td>
+            </tr>
+
+            <GroupRow label="Additives" />
+            <ItemRow
+              id="eo"
+              color={COLORS.eo}
+              name="Essential oil"
+              detail={`${eoRate} g per kg of oils`}
+              pct={ofOils(r.eo)}
+              grams={r.eo}
+              unit={unit}
+              hoverKey={hoverKey}
+              onHover={onHover}
+            />
+          </tbody>
+        </table>
+
+        <div className="mx-1 mb-2 mt-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-1 rounded-lg bg-well px-4 py-4">
+          <div>
+            <div className="text-sm font-semibold text-ink">Total wet batch weight</div>
+            <div className="text-xs text-muted">Oils, lye, water and essential oil</div>
+          </div>
+          <div className="text-right">
+            <div className="text-3xl font-semibold tracking-tight text-ink">
+              {fmtG(r.total)}<span className="ml-1.5 text-lg font-medium text-muted">g</span>
+            </div>
+            {unit !== 'g' && <div className="font-mono text-xs text-muted">{fmtUnit(r.total, unit)}</div>}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function BreakdownCard({ r, hoverKey, onHover }) {
+  const blend = r.oils.map((o) => ({ key: o.key, label: o.name, value: o.grams, color: o.color }));
+  const batch = [
+    ...r.oils.map((o) => ({ key: o.key, group: 'oils', label: o.name, value: o.grams, color: o.color })),
+    { key: 'water', label: 'Distilled water', value: r.water, color: COLORS.water },
+    { key: 'lye', label: 'NaOH lye', value: r.lye, color: COLORS.lye },
+    { key: 'eo', label: 'Essential oil', value: r.eo, color: COLORS.eo },
+  ];
+  return (
+    <section aria-labelledby="breakdown-title" className={`rounded-xl border border-line bg-surface px-5 py-5 transition-opacity sm:px-6 sm:py-6 ${r.balanced ? '' : 'opacity-60'}`}>
+      <h2 id="breakdown-title" className="font-display text-lg font-semibold leading-tight text-ink">Batch breakdown</h2>
+      <p className="mt-1 text-sm text-muted">Point at a segment or a recipe line to see its weight.</p>
+      <div className="mt-6 flex flex-col gap-8">
+        <StackedBar
+          title="Oil blend"
+          note="share of oil weight"
+          shareLabel="of oils"
+          segments={blend}
+          legend={r.oils.map((o) => ({ key: o.key, label: o.name, value: o.grams, colors: [o.color] }))}
+          hoverKey={hoverKey}
+          onHover={onHover}
+        />
+        <StackedBar
+          title="Wet batch"
+          note="share of total weight"
+          shareLabel="of batch"
+          segments={batch}
+          groups={{ oils: 'All oils' }}
+          legend={[
+            { key: 'oils', label: 'Oils', value: r.oilTotal, colors: r.oils.filter((o) => o.grams > 0).map((o) => o.color) },
+            { key: 'water', label: 'Distilled water', value: r.water, colors: [COLORS.water] },
+            { key: 'lye', label: 'NaOH lye', value: r.lye, colors: [COLORS.lye] },
+            { key: 'eo', label: 'Essential oil', value: r.eo, colors: [COLORS.eo] },
+          ]}
+          hoverKey={hoverKey}
+          onHover={onHover}
+        />
+      </div>
+    </section>
+  );
+}
+
+function SummaryBar({ r }) {
+  return (
+    <div
+      className="rise fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.25)]"
+      style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+    >
+      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 pt-3 sm:px-6">
+        {r.balanced ? (
+          <dl className="grid min-w-0 flex-1 grid-cols-3 gap-3">
+            {[
+              ['NaOH lye', r.lye],
+              ['Water', r.water],
+              ['Wet batch', r.total],
+            ].map(([label, g]) => (
+              <div key={label} className="min-w-0">
+                <dt className="text-[11px] uppercase tracking-[0.1em] text-muted">{label}</dt>
+                <dd className="truncate font-mono text-sm font-medium tabular-nums text-ink">{fmtG(g)} g</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium text-warn">
+            <WarnIcon className="h-4 w-4 shrink-0" /> Oils total {fmtPct(r.pctTotal)}. Set them to 100%.
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            document.getElementById('recipe')?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+          }}
+          className="flex shrink-0 items-center gap-1 rounded-md border border-line px-2.5 py-1.5 text-sm font-medium text-ink hover:bg-well"
+        >
+          <DownIcon className="h-3.5 w-3.5" /> Recipe
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---- App --------------------------------------------------------------------
+
+function SoapCalculator() {
+  const [state, setState] = useState(loadState);
+  const [hoverKey, setHoverKey] = useState(null);
+  const recipeRef = useRef(null);
+  const recipeInView = useInView(recipeRef);
+
+  const { oilGrams, unit, waterRatio, pct, superfat, eoRate } = state;
+  const update = (patch) => setState((s) => ({ ...s, ...patch }));
+  const setPct = (key, v) => setState((s) => ({ ...s, pct: { ...s.pct, [key]: v } }));
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+  }, [state]);
+
+  const r = useMemo(() => calculateRecipe(state), [state]);
+  const u = UNITS[unit];
+  const L = LIMITS;
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 pb-28 pt-8 sm:px-6 sm:pt-10">
+      <header className="mb-7 flex flex-wrap items-end justify-between gap-4">
+        <div className="min-w-0">
+          <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">Cold process · Sodium hydroxide</p>
+          <h1 className="mt-1.5 font-display text-[2rem] font-bold leading-[1.05] tracking-tight text-ink sm:text-[2.6rem]">
+            Cold-Process Soap Calculator
+          </h1>
+          <p className="mt-2 max-w-xl text-[15px] text-ink-2">
+            Set your oil blend, superfat and water ratio. Every weight on the recipe updates as you go.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setState(DEFAULTS)}
+          className="flex items-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-well"
+        >
+          <ResetIcon /> Reset to defaults
+        </button>
+      </header>
+
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+        {/* Inputs */}
+        <div className="divide-y divide-line rounded-xl border border-line bg-surface">
+          <Section id="batch-title" title="Batch parameters" description="How much oil you're soaping, and how much water dissolves the lye.">
+            <Control
+              htmlFor="oil-weight"
+              label="Total oil weight"
+              input={
+                <>
+                  <NumberInput
+                    id="oil-weight"
+                    value={oilGrams / u.gramsPer}
+                    onCommit={(v) => update({ oilGrams: v * u.gramsPer })}
+                    min={L.oilGrams.min / u.gramsPer}
+                    max={L.oilGrams.max / u.gramsPer}
+                    step={unit === 'g' ? 1 : 0.01}
+                    decimals={u.decimals}
+                    widthClass="w-20"
+                  />
+                  <UnitToggle value={unit} onChange={(next) => update({ unit: next })} />
+                </>
+              }
+              slider={
+                <Range
+                  id="oil-weight-range"
+                  label="Total oil weight in grams"
+                  value={oilGrams}
+                  min={L.oilGrams.sliderMin}
+                  max={L.oilGrams.sliderMax}
+                  step={L.oilGrams.step}
+                  valueText={`${fmtG(oilGrams)} grams`}
+                  onChange={(v) => update({ oilGrams: v })}
+                />
+              }
+              footer={[fmtUnit(L.oilGrams.sliderMin, unit), unit === 'g' ? '' : `${fmtG(oilGrams)} g`, fmtUnit(L.oilGrams.sliderMax, unit)]}
+            />
+            <Control
+              htmlFor="water-ratio"
+              label="Water to lye ratio"
+              input={
+                <NumberInput
+                  id="water-ratio"
+                  value={waterRatio}
+                  onCommit={(v) => update({ waterRatio: v })}
+                  min={L.waterRatio.min}
+                  max={L.waterRatio.max}
+                  step={L.waterRatio.step}
+                  decimals={2}
+                  suffix=": 1"
+                  widthClass="w-14"
+                />
+              }
+              slider={
+                <Range
+                  id="water-ratio-range"
+                  label="Water to lye ratio"
+                  value={waterRatio}
+                  min={L.waterRatio.min}
+                  max={L.waterRatio.max}
+                  step={L.waterRatio.step}
+                  valueText={`${waterRatio.toFixed(1)} to 1`}
+                  onChange={(v) => update({ waterRatio: v })}
+                />
+              }
+              footer={['1.5 : 1', `${r.lyeConcentration.toFixed(1)}% lye concentration`, '3.0 : 1']}
+            />
+          </Section>
+
+          <Section
+            id="oils-title"
+            title="Oil percentages"
+            description="Pick a preset or set each oil. The blend has to total 100%."
+            badge={
+              <span
+                className={`mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-xs font-medium tabular-nums ${
+                  r.balanced ? 'bg-ok-soft text-ok' : 'bg-warn-soft text-warn'
+                }`}
+              >
+                {r.balanced ? <CheckIcon className="h-3 w-3" /> : <WarnIcon className="h-3 w-3" />}
+                {fmtPct(r.pctTotal)}
+              </span>
+            }
+          >
+            <PresetButtons pct={pct} onApply={(next) => update({ pct: { ...next } })} />
+            {r.oils.map((o) => (
+              <Control
+                key={o.key}
+                htmlFor={`pct-${o.key}`}
+                label={
+                  <>
+                    <span className="h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ background: o.color }} aria-hidden="true" />
+                    <span className="truncate">{o.name}</span>
+                  </>
+                }
+                input={
+                  <NumberInput
+                    id={`pct-${o.key}`}
+                    value={o.pct}
+                    onCommit={(v) => setPct(o.key, v)}
+                    min={L.pct.min}
+                    max={L.pct.max}
+                    step={0.1}
+                    decimals={1}
+                    suffix="%"
+                    widthClass="w-14"
+                  />
+                }
+                slider={
+                  <Range
+                    id={`pct-${o.key}-range`}
+                    label={`${o.name} percentage`}
+                    value={o.pct}
+                    min={L.pct.min}
+                    max={L.pct.max}
+                    step={L.pct.step}
+                    fill={o.color}
+                    valueText={`${fmtPct(o.pct)}`}
+                    onChange={(v) => setPct(o.key, v)}
+                  />
+                }
+                footer={[`SAP ${o.sap.toFixed(3)} NaOH`, <span className="font-mono tabular-nums text-ink-2">{fmtG(o.grams)} g</span>]}
+              />
+            ))}
+            <BlendStatus
+              pct={pct}
+              total={r.pctTotal}
+              onScale={() => update({ pct: normalizeBlend(pct) })}
+              onBalance={() => setPct('olive', round1(Math.max(0, 100 - pct.coconut - pct.castor)))}
+            />
+          </Section>
+
+          <Section id="additives-title" title="Additives" description="Superfat leaves some oil unsaponified. Essential oil is dosed against the oil weight.">
+            <Control
+              htmlFor="superfat"
+              label="Superfat"
+              input={
+                <NumberInput
+                  id="superfat"
+                  value={superfat}
+                  onCommit={(v) => update({ superfat: v })}
+                  min={L.superfat.min}
+                  max={L.superfat.max}
+                  step={L.superfat.step}
+                  decimals={1}
+                  suffix="%"
+                  widthClass="w-14"
+                />
+              }
+              slider={
+                <Range
+                  id="superfat-range"
+                  label="Superfat percentage"
+                  value={superfat}
+                  min={L.superfat.min}
+                  max={L.superfat.max}
+                  step={L.superfat.step}
+                  valueText={fmtPct(superfat)}
+                  onChange={(v) => update({ superfat: v })}
+                />
+              }
+              footer={['4% · more cleansing', `lye cut by ${fmtG(r.unadjustedLye - r.lye)} g`, '8% · more conditioning']}
+            />
+            <Control
+              htmlFor="eo-rate"
+              label="Essential oil usage"
+              input={
+                <NumberInput
+                  id="eo-rate"
+                  value={eoRate}
+                  onCommit={(v) => update({ eoRate: v })}
+                  min={L.eoRate.min}
+                  max={L.eoRate.max}
+                  step={L.eoRate.step}
+                  decimals={1}
+                  suffix="g/kg"
+                  widthClass="w-12"
+                />
+              }
+              slider={
+                <Range
+                  id="eo-rate-range"
+                  label="Essential oil usage in grams per kilogram of oil"
+                  value={eoRate}
+                  min={L.eoRate.min}
+                  max={L.eoRate.max}
+                  step={L.eoRate.step}
+                  fill={COLORS.eo}
+                  valueText={`${eoRate} grams per kilogram`}
+                  onChange={(v) => update({ eoRate: v })}
+                />
+              }
+              footer={['15 g/kg', `${fmtPct(eoRate / 10)} of oils · ${fmtG(r.eo)} g`, '45 g/kg']}
+            />
+          </Section>
+        </div>
+
+        {/* Output */}
+        <div className="flex min-w-0 flex-col gap-6">
+          <RecipeCard r={r} state={state} hoverKey={hoverKey} onHover={setHoverKey} cardRef={recipeRef} />
+          <BreakdownCard r={r} hoverKey={hoverKey} onHover={setHoverKey} />
+        </div>
+      </div>
+
+      <footer className="mt-8 max-w-2xl text-xs leading-relaxed text-muted">
+        SAP values are grams of sodium hydroxide per gram of oil: olive 0.135, coconut (76°) 0.183, castor 0.128.
+        Check a new recipe against a second calculator before your first batch.
+      </footer>
+
+      {!recipeInView && <SummaryBar r={r} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<SoapCalculator />);
+</script>
+</body>
+</html>
