@@ -80,18 +80,18 @@ Cold-process soap recipe
 1,000.00 g oils · 5% superfat · 2.0:1 water to lye
 
 OILS
-Olive oil 80%                    800.00 g
-Coconut oil (76°) 15%            150.00 g
-Castor oil 5%                     50.00 g
+Olive oil 80%                   800.00 g
+Coconut oil (76°) 15%           150.00 g
+Castor oil 5%                    50.00 g
 
 LYE SOLUTION
-NaOH lye                         134.76 g
-Distilled water                  269.52 g
+NaOH lye                        134.76 g
+Distilled water                 269.52 g
 
 ADDITIVES
-Essential oil (30 g/kg)           30.00 g
+Essential oil (30 g/kg)          30.00 g
 
-Total wet batch                1,434.27 g
+Total wet batch               1,434.27 g
 ```
 
 ### Batch breakdown chart
