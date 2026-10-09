@@ -1,6 +1,6 @@
 # soap-calculator
 
-A cold-process soap recipe calculator in a single HTML file. Enter your oil blend, superfat, water-to-lye ratio and essential oil rate, and it gives the exact weight of every ingredient in grams, updating as you change any input.
+A cold-process soap recipe calculator in a single HTML file, in English and Arabic. Enter your oil blend, superfat, water-to-lye ratio and essential oil rate, and it gives the exact weight of every ingredient in grams, updating as you change any input.
 
 Built with React 18, Tailwind CSS (Play CDN) and in-browser JSX via Babel standalone. There is no build step and nothing to install.
 
@@ -21,6 +21,20 @@ python3 -m http.server 8000
 ## Using the calculator
 
 The page has two columns. Inputs are on the left and the recipe is on the right. On a phone the columns stack, and a bar at the bottom of the screen keeps the lye, water and total weights in view while you scroll.
+
+### Language (English / العربية)
+
+The **EN | عربي** switch at the top of the page changes the language. Arabic is a full right-to-left layout:
+
+- the whole page is mirrored, with inputs on the right and the recipe on the left
+- sliders fill from the right
+- chart bars start at the right edge, and their 0% mark is on the right
+
+Arabic text uses IBM Plex Sans Arabic, with Noto Kufi Arabic for headings.
+
+Numbers use Western digits (0–9) in both languages, so they match what kitchen scales show. Units are translated: g is غ, oz is أونصة, lb is رطل, and g/kg is غ/كغ.
+
+On the first visit the page picks Arabic if the browser's language is Arabic, and English otherwise. After that it remembers your choice.
 
 ### Batch parameters
 
@@ -73,7 +87,7 @@ The "% of oils" column also covers lye, water and essential oil (13.5%, 27% and 
 
 When the batch is entered in oz or lb, each weight also shows in that unit underneath the grams.
 
-**Copy recipe** puts a plain-text version on the clipboard. It is turned off while the oils don't total 100%.
+**Copy recipe** puts a plain-text version on the clipboard, in the current language. It is turned off while the oils don't total 100%. The English version is laid out in columns, as below. The Arabic version uses one `label: value` line per ingredient, because space-padded columns don't line up in right-to-left text.
 
 ```
 Cold-process soap recipe
@@ -105,9 +119,9 @@ Point at a segment, a legend entry or a line in the recipe card to highlight the
 
 ### Saved state and reset
 
-Your last recipe is saved in the browser's `localStorage` under the key `cp-soap-calculator:v1`, so it is still there when you reopen the page. The save is per browser and per device. If storage is blocked, for example in a private window, the calculator still works but starts from the defaults each time.
+Your last recipe is saved in the browser's `localStorage` under the key `cp-soap-calculator:v1`, and your language choice under `cp-soap-calculator:lang`, so both are still there when you reopen the page. The save is per browser and per device. If storage is blocked, for example in a private window, the calculator still works but starts from the defaults each time.
 
-**Reset to defaults** restores 1000 g, 80/15/5, 5% superfat, 2:1 water and 30 g/kg essential oil.
+**Reset to defaults** restores 1000 g, 80/15/5, 5% superfat, 2:1 water and 30 g/kg essential oil. It does not change the language.
 
 ## How the numbers are calculated
 
@@ -144,17 +158,31 @@ All of the code is in the `<script type="text/babel">` block in `index.html`, an
 
 Edit these constants near the top of the script:
 
-- `OILS`: each oil's `key`, display `name`, NaOH `sap` value and chart `color`
-- `PRESETS`: preset buttons, as `{ id, name, pct: { olive, coconut, castor } }`
+- `OILS`: each oil's `key`, NaOH `sap` value and chart `color`
+- `PRESETS`: preset buttons, as `{ id, pct: { olive, coconut, castor } }`
 - `DEFAULTS`: the starting recipe, also used by **Reset to defaults**
 - `LIMITS`: the min, max and step for every slider and number box
 
+Display names are kept separately, in `STRINGS` (see [Edit or add translations](#edit-or-add-translations)). If you change an SAP value, also update the sentence at the bottom of the page: it is the `footer` string in both languages.
+
+### Edit or add translations
+
+All visible text, including oil and preset names, units and screen-reader labels, is in the `STRINGS` object, with one block for `en` and one for `ar`. Both blocks have the same keys. Some entries are functions because a number goes inside the sentence, for example ``totalShort: (p) => `${p} short of 100%` ``.
+
+To change wording, edit the string in the right block. To add a language:
+
+1. Copy the `en` block under a new code, for example `fr`, and translate every value.
+2. Add it to the `options` list in `LanguageToggle`.
+3. If it is right-to-left, update the check in `applyLang` and `makeLocale` (currently `lang === 'ar'`) so it sets `dir="rtl"`.
+4. If its script needs its own font, add the font to the Google Fonts link and override `--font-sans` and `--font-display` for it, as `:root[lang="ar"]` does.
+
 ### Add an oil
 
-1. Add an entry to `OILS`, for example `{ key: 'shea', name: 'Shea butter', sap: 0.128, color: 'var(--s-shea)' }`.
-2. Define `--s-shea` in the `:root` block and in both dark-mode blocks (`@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]`).
-3. Add the new key to `DEFAULTS.pct` and to every preset's `pct`.
-4. Update **Fill the gap with olive oil**. It assumes the three original oils: see `canBalance` in `BlendStatus` and the `onBalance` handler in `SoapCalculator`.
+1. Add an entry to `OILS`, for example `{ key: 'shea', sap: 0.128, color: 'var(--s-shea)' }`.
+2. Add its name to `oils` in every `STRINGS` block, for example `shea: 'Shea butter'` and `shea: 'زبدة الشيا'`.
+3. Define `--s-shea` in the `:root` block and in both dark-mode blocks (`@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]`).
+4. Add the new key to `DEFAULTS.pct` and to every preset's `pct`.
+5. Update **Fill the gap with olive oil**. It assumes the three original oils: see `canBalance` in `BlendStatus` and the `onBalance` handler in `SoapCalculator`.
 
 Saved recipes from before the change still load. An oil missing from the saved data falls back to its default percentage.
 
@@ -167,16 +195,18 @@ The page follows the system light or dark setting. Every colour is a CSS custom 
 ### Move it into a React + Tailwind project
 
 1. Copy the script block into a component file such as `SoapCalculator.jsx`.
-2. Replace `const { useState, useMemo, useEffect, useRef } = React;` with `import { useState, useMemo, useEffect, useRef } from 'react';`.
+2. Replace `const { useState, useMemo, useEffect, useLayoutEffect, useRef, createContext, useContext } = React;` with `import React, { useState, useMemo, useEffect, useLayoutEffect, useRef, createContext, useContext } from 'react';`.
 3. Replace the final `ReactDOM.createRoot(...)` line with `export default SoapCalculator;`.
-4. Move the CSS tokens, the `.range` slider styles and the number-input rules into your global stylesheet.
-5. Copy the `colors` and `fontFamily` entries from the inline `tailwind.config` into your project's Tailwind config.
-6. Load the three Google Fonts (Bricolage Grotesque, Public Sans, IBM Plex Mono), or change the `--font-*` tokens.
+4. Move everything in the `<style>` block into your global stylesheet: the colour and font tokens, the Arabic rules, the `.range` slider styles (including the `[dir="rtl"]` rule) and the number-input rules.
+5. Copy the `colors` and `fontFamily` entries from the inline `tailwind.config` into your project's Tailwind config. The layout uses logical utilities (`ps-*`, `pe-*`, `ms-*`, `text-start`, `text-end`, `start-0`, `end-0`, `rounded-e-*`) and the `rtl:` variant, which need Tailwind 3.3 or newer.
+6. Load the five Google Fonts (Bricolage Grotesque, Public Sans, IBM Plex Mono, IBM Plex Sans Arabic, Noto Kufi Arabic), or change the `--font-*` tokens.
+
+The component sets `lang` and `dir` on the `<html>` element when the language changes (see `applyLang`). If your app already controls those attributes, move that logic into your app instead.
 
 ## Project structure
 
 ```
-index.html   the whole app: markup, styles, Tailwind config and the React component
+index.html   the whole app: markup, styles, Tailwind config, English and Arabic text, and the React component
 README.md    this file
 ```
 
