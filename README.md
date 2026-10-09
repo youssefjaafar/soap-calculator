@@ -118,6 +118,19 @@ Two stacked bars:
 
 Point at a segment, a legend entry or a line in the recipe card to highlight the matching item and see its weight. Keyboard users can Tab through the segments.
 
+### Soapmaking guide
+
+A reference section at the bottom of the page, in both languages. The **Read the soapmaking guide** link under the page intro jumps to it. It has four parts:
+
+- **Water to lye ratio**: what changing the amount of water does, and what to expect at 1.5, 2.0, 2.5 and 3.0 : 1, with each ratio's lye concentration.
+- **Superfat by use**: suggested ranges for hair (shampoo bars, 4–5%), hands (4–6%), body (5–7%), and face or dry and sensitive skin (7–8%), with the reasons.
+- **Essential oils**: lavender, rosemary, peppermint, lemon, sweet orange, tea tree, eucalyptus and cedarwood. Each card gives the scent, what it suits, what it pairs with, a typical rate in g/kg, and a note on how it behaves in soap. Each card also says whether your current rate is below, within or above the oil's typical range. A safety note covers IFRA limits, oils to keep out of children's soap, and oils to avoid.
+- **How the numbers are calculated**: every formula in the order the calculator runs them, each worked with your current recipe, so the numbers change as you edit.
+
+Most suggestions have a **Use** button that applies the value to the calculator, for example **Use 4.5%** on the hair row. When the calculator already uses that value, the button is replaced by **Current**. The essential oil buttons set the total rate, so if you blend several oils, the rate covers the whole blend.
+
+The ranges are common starting points from soapmaking practice, not limits. For each essential oil's maximum, check your supplier's safety data or IFRA certificate.
+
 ### Saved state and reset
 
 Your last recipe is saved in the browser's `localStorage` under the key `cp-soap-calculator:v1`, and your language choice under `cp-soap-calculator:lang`, so both are still there when you reopen the page. The save is per browser and per device. If storage is blocked, for example in a private window, the calculator still works but starts from the defaults each time.
@@ -165,6 +178,16 @@ Edit these constants near the top of the script:
 - `LIMITS`: the min, max and step for every slider and number box
 
 Display names are kept separately, in `STRINGS` (see [Edit or add translations](#edit-or-add-translations)). If you change an SAP value, also update the sentence at the bottom of the page: it is the `footer` string in both languages.
+
+### Change the guide
+
+The guide's numbers and its text are kept separately:
+
+- `WATER_GUIDE`: the ratios listed, as numbers
+- `SUPERFAT_GUIDE`: each use as `{ id, min, max, use }`, where `use` is the value its **Use** button applies
+- `ESSENTIAL_OILS`: each oil as `{ id, latin, min, max }`, with the typical rate in g/kg. Its **Use** button applies the midpoint, rounded to the nearest 5.
+
+All the text is under `guide` in each `STRINGS` block. The water rows are a list in the same order as `WATER_GUIDE`. Superfat rows and oil cards are keyed by `id`. To add an essential oil, add an entry to `ESSENTIAL_OILS` and a matching entry under `guide.eo.oils` in both languages.
 
 ### Edit or add translations
 

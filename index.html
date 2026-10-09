@@ -224,6 +224,26 @@ const DEFAULTS = {
   eoRate: 30,
 };
 
+// Reference data for the soapmaking guide. Its text lives in STRINGS[lang].guide.
+const WATER_GUIDE = [1.5, 2, 2.5, 3];
+const SUPERFAT_GUIDE = [
+  { id: 'hair',  min: 4, max: 5, use: 4.5 },
+  { id: 'hands', min: 4, max: 6, use: 5 },
+  { id: 'body',  min: 5, max: 7, use: 6 },
+  { id: 'face',  min: 7, max: 8, use: 7.5 },
+];
+// Typical rinse-off soap rates, in g per kg of oils (within LIMITS.eoRate).
+const ESSENTIAL_OILS = [
+  { id: 'lavender',   latin: 'Lavandula angustifolia', min: 30, max: 40 },
+  { id: 'rosemary',   latin: 'Rosmarinus officinalis', min: 15, max: 30 },
+  { id: 'peppermint', latin: 'Mentha × piperita',      min: 15, max: 25 },
+  { id: 'lemon',      latin: 'Citrus limon',           min: 30, max: 45 },
+  { id: 'orange',     latin: 'Citrus sinensis',        min: 30, max: 45 },
+  { id: 'teaTree',    latin: 'Melaleuca alternifolia', min: 15, max: 30 },
+  { id: 'eucalyptus', latin: 'Eucalyptus globulus',    min: 15, max: 30 },
+  { id: 'cedarwood',  latin: 'Cedrus atlantica',       min: 15, max: 30 },
+];
+
 const STORAGE_KEY = 'cp-soap-calculator:v1';
 const LANG_KEY = 'cp-soap-calculator:lang';
 
@@ -322,6 +342,149 @@ const STRINGS = {
     recipeMeta: (w, sf, ratio) => `${w} oils · ${sf} superfat · ${ratio}:1 water to lye`,
     eoLine: (rate) => `Essential oil (${rate} g/kg)`,
     totalLine: 'Total wet batch',
+
+    guide: {
+      jump: 'Read the soapmaking guide',
+      eyebrow: 'Reference',
+      title: 'Soapmaking guide',
+      intro:
+        'What the settings above do, which superfat suits hair, hands or body, how common essential oils behave in soap, and the formulas behind every number.',
+      use: (v) => `Use ${v}`,
+      current: 'Current',
+
+      water: {
+        title: 'Water to lye ratio',
+        body: [
+          'The ratio is the weight of water divided by the weight of lye. Less water makes a stronger lye solution, so the batter reaches trace and firms up faster. More water gives you longer to work, but the bars stay soft for longer.',
+          'Most of the water evaporates during the 4–6 week cure, so the ratio changes how the soap behaves on the way there more than the finished bar.',
+        ],
+        yours: (ratio, conc) => `Your setting: ${ratio} : 1, a ${conc} lye solution.`,
+        solution: (p) => `${p} lye solution`,
+        rows: [
+          'Fast trace and quick unmolding, with less soda ash and shrinkage. Little time for swirls. Helps slow-setting, high-olive loaves.',
+          'Balanced working time. A reliable default for most recipes.',
+          'Slower trace, with time for swirls and layers. Bars are softer when you unmold them.',
+          'The most working time. Bars may need extra days in the mold and are more prone to soda ash and shrinking as they cure.',
+        ],
+        safety:
+          'Sodium hydroxide stops dissolving at roughly 1 : 1 at room temperature, so this calculator stops at 1.5 : 1 to leave a safety margin.',
+      },
+
+      superfat: {
+        title: 'Superfat by use',
+        body: [
+          'Superfat is the share of oil left unsaponified, because the recipe uses a little less lye than the oils could react with. That free oil makes a bar milder and more conditioning.',
+          'It is also a safety margin. SAP values vary between batches of oil, and a few percent of spare oil makes sure no unreacted lye is left in the bar. Higher superfat bars are softer, lather less and go rancid sooner.',
+        ],
+        rows: {
+          hair: {
+            name: 'Hair (shampoo bar)',
+            why: "Less free oil, so hair doesn't feel heavy or greasy. Castor oil helps the lather. Soap is alkaline (pH 9–10), so a rinse of diluted apple cider vinegar smooths hair, especially in hard water.",
+          },
+          hands: {
+            name: 'Hands',
+            why: 'A harder, more cleansing bar that lasts at a busy sink. Move toward 6% if frequent washing dries your hands.',
+          },
+          body: {
+            name: 'Body',
+            why: 'Balanced cleansing and conditioning. 5% is the usual starting point.',
+          },
+          face: {
+            name: 'Face, dry or sensitive skin',
+            why: 'The gentlest option. Bars are softer and lather less, so store them somewhere cool and dry to slow rancidity.',
+          },
+        },
+      },
+
+      eo: {
+        title: 'Essential oils',
+        body: 'Typical rates for rinse-off soap, in grams per kilogram of oils. Set the amount in Essential oil usage above. If you blend oils, the rate covers the whole blend.',
+        scent: 'Scent',
+        goodFor: 'Good for',
+        pairs: 'Pairs with',
+        range: 'Typical rate',
+        status: {
+          within: (r) => `Your ${r} is within range`,
+          above: (r) => `Your ${r} is above this range`,
+          below: (r) => `Your ${r} is below this range`,
+        },
+        oils: {
+          lavender: {
+            name: 'Lavender',
+            scent: 'Floral, herbal, soft',
+            goodFor: 'Body and evening bars, gentle blends',
+            pairs: 'Rosemary, cedarwood, peppermint, orange',
+            note: "Behaves well in cold process and doesn't speed up trace. Lavender 40/42 is a standardised blend that costs less.",
+          },
+          rosemary: {
+            name: 'Rosemary',
+            scent: 'Fresh, herbal, camphor-like',
+            goodFor: 'Shampoo bars, kitchen hand soap',
+            pairs: 'Lavender, peppermint, lemon',
+            note: 'Not the same as rosemary oleoresin extract (ROE), an antioxidant added to oils to slow rancidity. ROE adds no scent.',
+          },
+          peppermint: {
+            name: 'Peppermint',
+            scent: 'Sharp, minty, cooling',
+            goodFor: 'Morning shower bars, foot and after-sport soap',
+            pairs: 'Eucalyptus, rosemary, lavender',
+            note: 'Menthol tingles and can sting near the eyes. It is strong, so start at the low end.',
+          },
+          lemon: {
+            name: 'Lemon',
+            scent: 'Bright, fresh, zesty',
+            goodFor: 'Kitchen hand soap, uplifting body bars',
+            pairs: 'Litsea cubeba, lavender, rosemary',
+            note: 'Citrus scent fades fast in cold process. Use 5-fold or 10-fold lemon, or add litsea cubeba and a base note such as cedarwood to hold it.',
+          },
+          orange: {
+            name: 'Sweet orange',
+            scent: 'Sweet, juicy, cheerful',
+            goodFor: 'Everyday hand and body bars',
+            pairs: 'Cedarwood, lavender, patchouli',
+            note: 'Inexpensive, but fades like lemon. 10-fold orange lasts much longer.',
+          },
+          teaTree: {
+            name: 'Tea tree',
+            scent: 'Medicinal, fresh, camphor-like',
+            goodFor: 'Face, foot and clarifying bars',
+            pairs: 'Lavender, peppermint, lemon',
+            note: 'Oxidised tea tree oil can irritate skin. Buy it fresh and store it cool and dark.',
+          },
+          eucalyptus: {
+            name: 'Eucalyptus',
+            scent: 'Clean, sharp, airy',
+            goodFor: 'Steamy shower bars',
+            pairs: 'Peppermint, rosemary, tea tree',
+            note: 'Fades fairly quickly. Blend it with peppermint or a base note.',
+          },
+          cedarwood: {
+            name: 'Cedarwood',
+            scent: 'Warm, woody, dry',
+            goodFor: 'Anchoring lighter scents, unisex bars',
+            pairs: 'Orange, lavender, eucalyptus',
+            note: 'A base note: it evaporates slowly and helps citrus and mint scents last.',
+          },
+        },
+        caution:
+          "Check your supplier's safety data or IFRA certificate for each oil's maximum rate. Leave peppermint, eucalyptus and rosemary out of soap for babies and young children. Avoid cinnamon bark and clove bud: they irritate skin and can make the batter seize.",
+      },
+
+      formulas: {
+        title: 'How the numbers are calculated',
+        body: 'Each step is worked with your current recipe, in the order the calculator runs them.',
+        steps: {
+          oil: { name: 'Oil weight', formula: 'total oil weight × oil % ÷ 100' },
+          unadjusted: { name: 'Lye before superfat', formula: "sum of (each oil's weight × its SAP value)" },
+          lye: { name: 'NaOH lye', formula: 'lye before superfat × (1 − superfat % ÷ 100)' },
+          water: { name: 'Distilled water', formula: 'NaOH lye × water-to-lye ratio' },
+          eo: { name: 'Essential oil', formula: 'total oil weight × usage rate ÷ 1000' },
+          total: { name: 'Total wet batch', formula: 'oils + NaOH lye + water + essential oil' },
+          conc: { name: 'Lye concentration', formula: 'NaOH lye ÷ (NaOH lye + water)' },
+        },
+        rounding: 'Every step uses unrounded values, so a result can differ from the sum of its rounded parts by 0.01 g.',
+      },
+    },
   },
 
   ar: {
@@ -416,6 +579,149 @@ const STRINGS = {
     recipeMeta: (w, sf, ratio) => `${w} زيوت · ${sf} دهون زائدة · ماء إلى صودا ${ratio}:1`,
     eoLine: (rate) => `زيت عطري (${rate} غ/كغ)`,
     totalLine: 'إجمالي الخلطة الرطبة',
+
+    guide: {
+      jump: 'اقرأ دليل صناعة الصابون',
+      eyebrow: 'مرجع',
+      title: 'دليل صناعة الصابون',
+      intro:
+        'ما الذي تفعله الإعدادات في الأعلى، وأي نسبة دهون زائدة تناسب الشعر أو اليدين أو الجسم، وكيف تتصرّف الزيوت العطرية الشائعة في الصابون، والمعادلات وراء كل رقم.',
+      use: (v) => `استخدم ${v}`,
+      current: 'الحالي',
+
+      water: {
+        title: 'نسبة الماء إلى الصودا',
+        body: [
+          'النسبة هي وزن الماء مقسومًا على وزن الصودا. كلما قلّ الماء صار محلول الصودا أقوى، فيصل الخليط إلى مرحلة الأثر (trace) ويتماسك أسرع. وكلما زاد الماء طال وقت العمل، لكن قطع الصابون تبقى طرية لفترة أطول.',
+          'يتبخّر معظم الماء خلال فترة التجفيف التي تمتد من 4 إلى 6 أسابيع، لذلك تؤثر النسبة في سلوك الصابون أثناء التحضير أكثر من تأثيرها في القطعة النهائية.',
+        ],
+        yours: (ratio, conc) => `إعدادك الحالي: ${ratio} : 1، أي محلول صودا بتركيز ${conc}.`,
+        solution: (p) => `محلول بتركيز ${p}`,
+        rows: [
+          'وصول سريع إلى مرحلة الأثر وإخراج مبكر من القالب، مع رماد صودا وانكماش أقل. لا يترك وقتًا كافيًا للتمويج. مفيد للخلطات الغنية بزيت الزيتون البطيئة التماسك.',
+          'وقت عمل متوازن، وخيار افتراضي موثوق لمعظم الوصفات.',
+          'وصول أبطأ إلى مرحلة الأثر، مع وقت كافٍ للتمويج والطبقات. تكون القطع أطرى عند إخراجها من القالب.',
+          'أطول وقت للعمل. قد تحتاج القطع إلى أيام إضافية في القالب، وتكون أكثر عرضة لرماد الصودا والانكماش أثناء التجفيف.',
+        ],
+        safety:
+          'لا يذوب هيدروكسيد الصوديوم بعد نسبة 1 : 1 تقريبًا في درجة حرارة الغرفة، لذلك تتوقف هذه الحاسبة عند 1.5 : 1 لترك هامش أمان.',
+      },
+
+      superfat: {
+        title: 'الدهون الزائدة حسب الاستخدام',
+        body: [
+          'الدهون الزائدة هي نسبة الزيت التي تبقى دون تصبّن، لأن الوصفة تستخدم صودا أقل بقليل مما تستطيع الزيوت التفاعل معه. هذا الزيت الحر يجعل الصابون ألطف وأكثر ترطيبًا.',
+          'وهي أيضًا هامش أمان: تختلف قيم التصبّن بين دفعات الزيت، وبضعة في المئة من الزيت الإضافي تضمن ألّا تبقى صودا غير متفاعلة في الصابون. الصابون ذو الدهون الزائدة المرتفعة أطرى، ورغوته أقل، ويتزنّخ أسرع.',
+        ],
+        rows: {
+          hair: {
+            name: 'الشعر (قالب شامبو)',
+            why: 'زيت حر أقل حتى لا يبدو الشعر ثقيلًا أو دهنيًا، وزيت الخروع يحسّن الرغوة. الصابون قلوي (pH بين 9 و10)، لذا يساعد شطف الشعر بخل التفاح المخفف على تنعيمه، خاصة مع الماء العسر.',
+          },
+          hands: {
+            name: 'اليدان',
+            why: 'قطعة أصلب وأقوى تنظيفًا تدوم طويلًا عند المغسلة المستخدمة كثيرًا. اتجه نحو 6% إذا كان الغسل المتكرر يجفّف يديك.',
+          },
+          body: {
+            name: 'الجسم',
+            why: 'توازن بين التنظيف والترطيب، و5% هي نقطة البداية المعتادة.',
+          },
+          face: {
+            name: 'الوجه والبشرة الجافة أو الحساسة',
+            why: 'الخيار الألطف. القطع أطرى ورغوتها أقل، فاحفظها في مكان بارد وجاف لإبطاء التزنّخ.',
+          },
+        },
+      },
+
+      eo: {
+        title: 'الزيوت العطرية',
+        body: 'معدلات شائعة للصابون الذي يُشطف، بالغرام لكل كيلوغرام من الزيوت. اضبط الكمية من «معدّل الزيت العطري» في الأعلى. وإذا مزجت أكثر من زيت، فالمعدل يشمل المزيج كله.',
+        scent: 'الرائحة',
+        goodFor: 'مناسب لـ',
+        pairs: 'يمتزج مع',
+        range: 'المعدل المعتاد',
+        status: {
+          within: (r) => `معدلك ${r} ضمن النطاق`,
+          above: (r) => `معدلك ${r} أعلى من هذا النطاق`,
+          below: (r) => `معدلك ${r} أقل من هذا النطاق`,
+        },
+        oils: {
+          lavender: {
+            name: 'اللافندر (الخزامى)',
+            scent: 'زهرية عشبية ناعمة',
+            goodFor: 'صابون الجسم والاستخدام المسائي والخلطات اللطيفة',
+            pairs: 'إكليل الجبل، خشب الأرز، النعناع، البرتقال',
+            note: 'يتصرّف جيدًا في الطريقة الباردة ولا يسرّع الوصول إلى مرحلة الأثر. لافندر 40/42 مزيج معياري أقل تكلفة.',
+          },
+          rosemary: {
+            name: 'إكليل الجبل (الروزماري)',
+            scent: 'منعشة عشبية تشبه الكافور',
+            goodFor: 'قوالب الشامبو وصابون اليدين في المطبخ',
+            pairs: 'اللافندر، النعناع، الليمون',
+            note: 'يختلف عن مستخلص إكليل الجبل الزيتي (ROE)، وهو مضاد أكسدة يُضاف إلى الزيوت لإبطاء التزنّخ ولا يضيف رائحة.',
+          },
+          peppermint: {
+            name: 'النعناع الفلفلي',
+            scent: 'حادة نعناعية منعشة',
+            goodFor: 'صابون الاستحمام الصباحي وصابون القدمين وبعد الرياضة',
+            pairs: 'الأوكالبتوس، إكليل الجبل، اللافندر',
+            note: 'المنثول يسبب وخزًا خفيفًا وقد يلسع قرب العينين. رائحته قوية، فابدأ بالحد الأدنى.',
+          },
+          lemon: {
+            name: 'الليمون',
+            scent: 'مشرقة منعشة حمضية',
+            goodFor: 'صابون اليدين في المطبخ وصابون الجسم المنعش',
+            pairs: 'ليتسيا كيوبيبا، اللافندر، إكليل الجبل',
+            note: 'تتلاشى روائح الحمضيات بسرعة في الطريقة الباردة. استخدم زيت ليمون مركّزًا (5 أو 10 أضعاف)، أو أضف ليتسيا كيوبيبا ونوتة قاعدية مثل خشب الأرز لتثبيت الرائحة.',
+          },
+          orange: {
+            name: 'البرتقال الحلو',
+            scent: 'حلوة عصيرية مبهجة',
+            goodFor: 'صابون اليدين والجسم اليومي',
+            pairs: 'خشب الأرز، اللافندر، الباتشولي',
+            note: 'رخيص الثمن لكنه يتلاشى مثل الليمون. البرتقال المركّز 10 أضعاف يدوم أطول بكثير.',
+          },
+          teaTree: {
+            name: 'شجرة الشاي',
+            scent: 'طبية منعشة تشبه الكافور',
+            goodFor: 'صابون الوجه والقدمين والصابون المنقّي',
+            pairs: 'اللافندر، النعناع، الليمون',
+            note: 'زيت شجرة الشاي المؤكسد قد يهيّج البشرة، فاشترِه طازجًا واحفظه في مكان بارد ومظلم.',
+          },
+          eucalyptus: {
+            name: 'الأوكالبتوس',
+            scent: 'نظيفة حادة خفيفة',
+            goodFor: 'صابون الاستحمام بالماء الساخن',
+            pairs: 'النعناع، إكليل الجبل، شجرة الشاي',
+            note: 'يتلاشى بسرعة نسبيًا، فامزجه مع النعناع أو نوتة قاعدية.',
+          },
+          cedarwood: {
+            name: 'خشب الأرز',
+            scent: 'دافئة خشبية جافة',
+            goodFor: 'تثبيت الروائح الخفيفة والصابون المناسب للجميع',
+            pairs: 'البرتقال، اللافندر، الأوكالبتوس',
+            note: 'نوتة قاعدية تتبخّر ببطء وتساعد روائح الحمضيات والنعناع على البقاء.',
+          },
+        },
+        caution:
+          'راجع بيانات السلامة من المورّد أو شهادة IFRA لمعرفة الحد الأقصى لكل زيت. لا تضع النعناع أو الأوكالبتوس أو إكليل الجبل في صابون الرضّع والأطفال الصغار. وتجنّب لحاء القرفة وبراعم القرنفل، فهي تهيّج البشرة وقد تجعل الخليط يتكتّل فجأة.',
+      },
+
+      formulas: {
+        title: 'كيف تُحسب الأرقام',
+        body: 'كل خطوة محسوبة بوصفتك الحالية، بالترتيب الذي تتبعه الحاسبة.',
+        steps: {
+          oil: { name: 'وزن كل زيت', formula: 'إجمالي وزن الزيوت × نسبة الزيت ÷ 100' },
+          unadjusted: { name: 'الصودا قبل الدهون الزائدة', formula: 'مجموع (وزن كل زيت × قيمة التصبّن الخاصة به)' },
+          lye: { name: 'الصودا الكاوية', formula: 'الصودا قبل الدهون الزائدة × (1 − نسبة الدهون الزائدة ÷ 100)' },
+          water: { name: 'الماء المقطّر', formula: 'الصودا الكاوية × نسبة الماء إلى الصودا' },
+          eo: { name: 'الزيت العطري', formula: 'إجمالي وزن الزيوت × المعدّل ÷ 1000' },
+          total: { name: 'إجمالي الخلطة الرطبة', formula: 'الزيوت + الصودا + الماء + الزيت العطري' },
+          conc: { name: 'تركيز محلول الصودا', formula: 'الصودا ÷ (الصودا + الماء)' },
+        },
+        rounding: 'تستخدم كل خطوة القيم غير المقرّبة، لذا قد يختلف الناتج عن مجموع أجزائه المقرّبة بمقدار 0.01 غ.',
+      },
+    },
   },
 };
 
@@ -507,6 +813,13 @@ const grams2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximu
 const fmtG = (g) => grams2.format(g);
 const fmtPct = (p, digits = 1) =>
   `${new Intl.NumberFormat('en-US', { maximumFractionDigits: digits }).format(p)}%`;
+const plain = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const fmtN = (v) => plain.format(v);
+
+function scrollToId(id) {
+  const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.getElementById(id)?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+}
 
 function makeLocale(lang) {
   const t = STRINGS[lang];
@@ -1221,10 +1534,7 @@ function SummaryBar({ r }) {
         )}
         <button
           type="button"
-          onClick={() => {
-            const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            document.getElementById('recipe')?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
-          }}
+          onClick={() => scrollToId('recipe')}
           aria-label={t.barRecipe}
           className="flex shrink-0 items-center gap-1 rounded-md border border-line px-2.5 py-1.5 text-sm font-medium text-ink hover:bg-well"
         >
@@ -1233,6 +1543,216 @@ function SummaryBar({ r }) {
         </button>
       </div>
     </div>
+  );
+}
+
+// ---- Soapmaking guide -------------------------------------------------------
+
+function GuideCard({ id, title, className = '', children }) {
+  return (
+    <section aria-labelledby={id} className={`rounded-xl border border-line bg-surface px-5 py-6 sm:px-6 ${className}`}>
+      <h3 id={id} className="font-display text-lg font-semibold leading-tight text-ink rtl:leading-snug">{title}</h3>
+      <div className="mt-3 flex flex-col gap-4">{children}</div>
+    </section>
+  );
+}
+
+const Prose = ({ children }) => <p className="max-w-prose text-sm leading-relaxed text-ink-2">{children}</p>;
+
+// Applies a suggested value; shows "Current" instead once the calculator already uses it.
+function UseButton({ active, label, onClick }) {
+  const { t } = useLocale();
+  if (active) {
+    return (
+      <span className="inline-flex shrink-0 items-center gap-1 px-2 py-1 text-xs font-medium text-ok">
+        <CheckIcon className="h-3.5 w-3.5" /> {t.guide.current}
+      </span>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="shrink-0 whitespace-nowrap rounded-md border border-line bg-surface px-2 py-1 text-xs font-medium text-ink transition-colors hover:bg-well"
+    >
+      {label}
+    </button>
+  );
+}
+
+function WaterGuide({ waterRatio, lyeConcentration, onUse }) {
+  const { t } = useLocale();
+  const g = t.guide.water;
+  return (
+    <GuideCard id="guide-water" title={g.title}>
+      {g.body.map((p, i) => <Prose key={i}>{p}</Prose>)}
+      <p className="text-sm font-medium text-ink">{g.yours(waterRatio.toFixed(1), fmtPct(lyeConcentration))}</p>
+      <ul className="divide-y divide-line border-y border-line">
+        {WATER_GUIDE.map((ratio, i) => (
+          <li key={ratio} className="flex flex-col gap-1 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                <span className="font-mono text-sm font-semibold tabular-nums text-ink">{ratio.toFixed(1)} : 1</span>
+                <span className="text-xs text-muted">{g.solution(fmtPct(100 / (1 + ratio)))}</span>
+              </div>
+              <UseButton
+                active={Math.abs(waterRatio - ratio) < 0.001}
+                label={t.guide.use(`${ratio.toFixed(1)} : 1`)}
+                onClick={() => onUse(ratio)}
+              />
+            </div>
+            <p className="text-sm text-ink-2">{g.rows[i]}</p>
+          </li>
+        ))}
+      </ul>
+      <p className="flex items-start gap-2 text-xs text-ink-2">
+        <WarnIcon className="mt-px h-3.5 w-3.5 shrink-0 text-warn" />
+        {g.safety}
+      </p>
+    </GuideCard>
+  );
+}
+
+function SuperfatGuide({ superfat, onUse }) {
+  const { t } = useLocale();
+  const g = t.guide.superfat;
+  return (
+    <GuideCard id="guide-superfat" title={g.title}>
+      {g.body.map((p, i) => <Prose key={i}>{p}</Prose>)}
+      <ul className="divide-y divide-line border-y border-line">
+        {SUPERFAT_GUIDE.map((row) => (
+          <li key={row.id} className="flex flex-col gap-1 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                <span className="text-sm font-semibold text-ink">{g.rows[row.id].name}</span>
+                <span className="font-mono text-xs tabular-nums text-muted">{`${row.min}–${row.max}%`}</span>
+              </div>
+              <UseButton
+                active={Math.abs(superfat - row.use) < 0.001}
+                label={t.guide.use(fmtPct(row.use))}
+                onClick={() => onUse(row.use)}
+              />
+            </div>
+            <p className="text-sm text-ink-2">{g.rows[row.id].why}</p>
+          </li>
+        ))}
+      </ul>
+    </GuideCard>
+  );
+}
+
+function EssentialOilGuide({ eoRate, onUse }) {
+  const { t } = useLocale();
+  const g = t.guide.eo;
+  return (
+    <GuideCard id="guide-eo" title={g.title} className="mt-6">
+      <Prose>{g.body}</Prose>
+      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {ESSENTIAL_OILS.map((oil) => {
+          const text = g.oils[oil.id];
+          const use = Math.round((oil.min + oil.max) / 2 / 5) * 5;
+          const status = eoRate > oil.max ? 'above' : eoRate < oil.min ? 'below' : 'within';
+          return (
+            <li key={oil.id} className="flex flex-col gap-3 rounded-lg bg-well p-4">
+              <div>
+                <h4 className="text-sm font-semibold text-ink">{text.name}</h4>
+                <p lang="la" className="text-xs italic text-muted">{oil.latin}</p>
+              </div>
+              <dl className="flex flex-col gap-1.5 text-xs">
+                {['scent', 'goodFor', 'pairs'].map((k) => (
+                  <div key={k}>
+                    <dt className="text-muted">{g[k]}</dt>
+                    <dd className="text-ink-2">{text[k]}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="text-xs leading-relaxed text-ink-2">{text.note}</p>
+              <div className="mt-auto flex flex-col gap-2 border-t border-line pt-3">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-xs text-muted">{g.range}</span>
+                  <span className="font-mono text-sm font-medium tabular-nums text-ink">{`${oil.min}–${oil.max} ${t.gPerKg}`}</span>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span
+                    className={`flex items-center gap-1 text-xs ${
+                      status === 'within' ? 'text-ok' : status === 'above' ? 'text-warn' : 'text-muted'
+                    }`}
+                  >
+                    {status === 'within' && <CheckIcon className="h-3.5 w-3.5 shrink-0" />}
+                    {status === 'above' && <WarnIcon className="h-3.5 w-3.5 shrink-0" />}
+                    {g.status[status](`${eoRate} ${t.gPerKg}`)}
+                  </span>
+                  <UseButton active={eoRate === use} label={t.guide.use(`${use} ${t.gPerKg}`)} onClick={() => onUse(use)} />
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="flex items-start gap-2 text-xs text-ink-2">
+        <WarnIcon className="mt-px h-3.5 w-3.5 shrink-0 text-warn" />
+        {g.caution}
+      </p>
+    </GuideCard>
+  );
+}
+
+// The calculation steps, each worked with the current recipe.
+function FormulaGuide({ r, state }) {
+  const { t, fmtW } = useLocale();
+  const g = t.guide.formulas;
+  const { oilGrams, superfat, waterRatio, eoRate } = state;
+  const steps = [
+    { key: 'oil', lines: r.oils.map((o) => `${t.oils[o.key]}: ${fmtN(oilGrams)} × ${fmtN(o.pct)} ÷ 100 = ${fmtW(o.grams)}`) },
+    { key: 'unadjusted', lines: [`${r.oils.map((o) => `${fmtG(o.grams)} × ${o.sap.toFixed(3)}`).join(' + ')} = ${fmtW(r.unadjustedLye)}`] },
+    { key: 'lye', lines: [`${fmtG(r.unadjustedLye)} × (1 − ${fmtN(superfat)} ÷ 100) = ${fmtW(r.lye)}`] },
+    { key: 'water', lines: [`${fmtG(r.lye)} × ${fmtN(waterRatio)} = ${fmtW(r.water)}`] },
+    { key: 'eo', lines: [`${fmtN(oilGrams)} × ${fmtN(eoRate)} ÷ 1000 = ${fmtW(r.eo)}`] },
+    { key: 'total', lines: [`${fmtG(r.oilTotal)} + ${fmtG(r.lye)} + ${fmtG(r.water)} + ${fmtG(r.eo)} = ${fmtW(r.total)}`] },
+    { key: 'conc', lines: [`${fmtG(r.lye)} ÷ (${fmtG(r.lye)} + ${fmtG(r.water)}) = ${fmtPct(r.lyeConcentration)}`] },
+  ];
+  return (
+    <GuideCard id="guide-formulas" title={g.title} className="mt-6">
+      <Prose>{g.body}</Prose>
+      <ol className="divide-y divide-line border-y border-line">
+        {steps.map((s, i) => (
+          <li key={s.key} className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-3 py-3.5">
+            <span className="mt-px flex h-6 w-6 items-center justify-center rounded-full bg-accent-soft font-mono text-xs font-semibold text-ink">
+              {i + 1}
+            </span>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                <span className="text-sm font-semibold text-ink">{g.steps[s.key].name}</span>
+                <span className="text-sm text-ink-2">= {g.steps[s.key].formula}</span>
+              </div>
+              {s.lines.map((line, j) => (
+                <p key={j} className="break-words font-mono text-[13px] tabular-nums text-ink">{line}</p>
+              ))}
+            </div>
+          </li>
+        ))}
+      </ol>
+      <p className="text-xs text-muted">{g.rounding}</p>
+    </GuideCard>
+  );
+}
+
+function Guide({ r, state, update }) {
+  const { t } = useLocale();
+  return (
+    <section id="guide" aria-labelledby="guide-title" className="mt-14 scroll-mt-6">
+      <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">{t.guide.eyebrow}</p>
+      <h2 id="guide-title" className="mt-1.5 font-display text-2xl font-bold tracking-tight text-ink sm:text-[1.75rem] rtl:leading-snug">
+        {t.guide.title}
+      </h2>
+      <p className="mt-2 max-w-2xl text-[15px] text-ink-2">{t.guide.intro}</p>
+      <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
+        <WaterGuide waterRatio={state.waterRatio} lyeConcentration={r.lyeConcentration} onUse={(v) => update({ waterRatio: v })} />
+        <SuperfatGuide superfat={state.superfat} onUse={(v) => update({ superfat: v })} />
+      </div>
+      <EssentialOilGuide eoRate={state.eoRate} onUse={(v) => update({ eoRate: v })} />
+      <FormulaGuide r={r} state={state} />
+    </section>
   );
 }
 
@@ -1278,6 +1798,13 @@ function SoapCalculator() {
               {t.title}
             </h1>
             <p className="mt-2 max-w-xl text-[15px] text-ink-2">{t.intro}</p>
+            <button
+              type="button"
+              onClick={() => scrollToId('guide')}
+              className="mt-2.5 inline-flex items-center gap-1.5 text-sm font-medium text-accent underline-offset-4 hover:underline"
+            >
+              <DownIcon className="h-3.5 w-3.5" /> {t.guide.jump}
+            </button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <LanguageToggle value={lang} onChange={setLang} />
@@ -1493,6 +2020,8 @@ function SoapCalculator() {
             <BreakdownCard r={r} hoverKey={hoverKey} onHover={setHoverKey} />
           </div>
         </div>
+
+        <Guide r={r} state={state} update={update} />
 
         <footer className="mt-8 max-w-2xl text-xs leading-relaxed text-muted">{t.footer}</footer>
 
