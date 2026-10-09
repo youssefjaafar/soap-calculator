@@ -58,6 +58,7 @@ Presets set all three at once:
 | Classic | 70 / 25 / 5 |
 | High Olive | 80 / 15 / 5 |
 | Castile Hybrid | 85 / 10 / 5 |
+| Pure Castile | 100 / 0 / 0 |
 
 The blend must total 100%. When it doesn't, a warning shows how far off it is, and the recipe and charts fade with a note explaining why. Two buttons fix it:
 

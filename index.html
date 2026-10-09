@@ -197,6 +197,7 @@ const PRESETS = [
   { id: 'classic',    pct: { olive: 70, coconut: 25, castor: 5 } },
   { id: 'high-olive', pct: { olive: 80, coconut: 15, castor: 5 } },
   { id: 'castile',    pct: { olive: 85, coconut: 10, castor: 5 } },
+  { id: 'pure-castile', pct: { olive: 100, coconut: 0, castor: 0 } },
 ];
 
 // The batch can be entered in any of these; every calculation runs in grams.
@@ -240,7 +241,7 @@ const STRINGS = {
     unitGroup: 'Batch weight unit',
     gPerKg: 'g/kg',
     oils: { olive: 'Olive oil', coconut: 'Coconut oil (76°)', castor: 'Castor oil' },
-    presets: { classic: 'Classic', 'high-olive': 'High Olive', castile: 'Castile Hybrid' },
+    presets: { classic: 'Classic', 'high-olive': 'High Olive', castile: 'Castile Hybrid', 'pure-castile': 'Pure Castile' },
 
     batchTitle: 'Batch parameters',
     batchDesc: "How much oil you're soaping, and how much water dissolves the lye.",
@@ -334,7 +335,7 @@ const STRINGS = {
     unitGroup: 'وحدة وزن الدفعة',
     gPerKg: 'غ/كغ',
     oils: { olive: 'زيت الزيتون', coconut: 'زيت جوز الهند (76°)', castor: 'زيت الخروع' },
-    presets: { classic: 'كلاسيكي', 'high-olive': 'غني بالزيتون', castile: 'قشتالي هجين' },
+    presets: { classic: 'كلاسيكي', 'high-olive': 'غني بالزيتون', castile: 'قشتالي هجين', 'pure-castile': 'قشتالي خالص' },
 
     batchTitle: 'إعدادات الدفعة',
     batchDesc: 'كمية الزيوت التي ستحوّلها إلى صابون، وكمية الماء التي تذيب الصودا الكاوية.',
@@ -766,7 +767,7 @@ function MiniBar({ pct, height = 'h-1.5' }) {
 function PresetButtons({ pct, onApply }) {
   const { t } = useLocale();
   return (
-    <div role="group" aria-label={t.presetGroup} className="grid grid-cols-3 gap-2">
+    <div role="group" aria-label={t.presetGroup} className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
       {PRESETS.map((p) => {
         const active = OILS.every((o) => Math.abs(pct[o.key] - p.pct[o.key]) < 0.001);
         return (
