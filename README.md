@@ -1,6 +1,6 @@
 # soap-calculator
 
-A cold-process soap recipe calculator in a single HTML file, in English and Arabic. Enter your oil blend, superfat, water-to-lye ratio and essential oil rate, and it gives the exact weight of every ingredient in grams, updating as you change any input.
+A cold-process soap recipe calculator in a single HTML file, in English, French and Arabic. Enter your oil blend, superfat, water-to-lye ratio and essential oil rate, and it gives the exact weight of every ingredient in grams, updating as you change any input.
 
 Built with React 18, Tailwind CSS (Play CDN) and in-browser JSX via Babel standalone. There is no build step and nothing to install.
 
@@ -22,9 +22,13 @@ python3 -m http.server 8000
 
 The page has two columns. Inputs are on the left and the recipe is on the right. On a phone the columns stack, and a bar at the bottom of the screen keeps the lye, water and total weights in view while you scroll.
 
-### Language (English / العربية)
+### Language (English / Français / العربية)
 
-The **EN | عربي** switch at the top of the page changes the language. Arabic is a full right-to-left layout:
+The **EN | FR | عربي** switch at the top of the page changes the language.
+
+French follows French number style: a comma for decimals, a space between thousands and before the percent sign (`1 434,27 g`, `33,3 %`). It uses French soapmaking terms such as *surgraissage* (superfat), *trace* and *cure*. French typography's narrow no-break space doesn't render in the page's main font, so numbers use a regular no-break space instead.
+
+Arabic is a full right-to-left layout:
 
 - the whole page is mirrored, with inputs on the right and the recipe on the left
 - sliders fill from the right
@@ -32,9 +36,9 @@ The **EN | عربي** switch at the top of the page changes the language. Arabic
 
 Arabic text uses IBM Plex Sans Arabic, with Noto Kufi Arabic for headings.
 
-Numbers use Western digits (0–9) in both languages, so they match what kitchen scales show. Units are translated: g is غ, oz is أونصة, lb is رطل, and g/kg is غ/كغ.
+Arabic numbers use Western digits (0–9) with English-style separators (`1,434.27`), so they match what kitchen scales show. Units are translated: g is غ, oz is أونصة, lb is رطل, and g/kg is غ/كغ.
 
-On the first visit the page picks Arabic if the browser's language is Arabic, and English otherwise. After that it remembers your choice.
+On the first visit the page picks French or Arabic if the browser is set to one of them, and English otherwise. After that it remembers your choice.
 
 ### Batch parameters
 
@@ -88,7 +92,7 @@ The "% of oils" column also covers lye, water and essential oil (13.5%, 27% and 
 
 When the batch is entered in oz or lb, each weight also shows in that unit underneath the grams.
 
-**Copy recipe** puts a plain-text version on the clipboard, in the current language. It is turned off while the oils don't total 100%. The English version is laid out in columns, as below. The Arabic version uses one `label: value` line per ingredient, because space-padded columns don't line up in right-to-left text.
+**Copy recipe** puts a plain-text version on the clipboard, in the current language. It is turned off while the oils don't total 100%. The English and French versions are laid out in columns, as below. The Arabic version uses one `label: value` line per ingredient, because space-padded columns don't line up in right-to-left text.
 
 ```
 Cold-process soap recipe
@@ -120,7 +124,7 @@ Point at a segment, a legend entry or a line in the recipe card to highlight the
 
 ### Soapmaking guide
 
-A reference section at the bottom of the page, in both languages. The **Read the soapmaking guide** link under the page intro jumps to it. It has four parts:
+A reference section at the bottom of the page, in all three languages. The **Read the soapmaking guide** link under the page intro jumps to it. It has four parts:
 
 - **Water to lye ratio**: what changing the amount of water does, and what to expect at 1.5, 2.0, 2.5 and 3.0 : 1, with each ratio's lye concentration.
 - **Superfat by use**: suggested ranges for hair (shampoo bars, 4–5%), hands (4–6%), body (5–7%), and face or dry and sensitive skin (7–8%), with the reasons.
@@ -177,7 +181,7 @@ Edit these constants near the top of the script:
 - `DEFAULTS`: the starting recipe, also used by **Reset to defaults**
 - `LIMITS`: the min, max and step for every slider and number box
 
-Display names are kept separately, in `STRINGS` (see [Edit or add translations](#edit-or-add-translations)). If you change an SAP value, also update the sentence at the bottom of the page: it is the `footer` string in both languages.
+Display names are kept separately, in `STRINGS` (see [Edit or add translations](#edit-or-add-translations)). If you change an SAP value, also update the sentence at the bottom of the page: it is the `footer` string in every language.
 
 ### Change the guide
 
@@ -187,23 +191,26 @@ The guide's numbers and its text are kept separately:
 - `SUPERFAT_GUIDE`: each use as `{ id, min, max, use }`, where `use` is the value its **Use** button applies
 - `ESSENTIAL_OILS`: each oil as `{ id, latin, min, max }`, with the typical rate in g/kg. Its **Use** button applies the midpoint, rounded to the nearest 5.
 
-All the text is under `guide` in each `STRINGS` block. The water rows are a list in the same order as `WATER_GUIDE`. Superfat rows and oil cards are keyed by `id`. To add an essential oil, add an entry to `ESSENTIAL_OILS` and a matching entry under `guide.eo.oils` in both languages.
+All the text is under `guide` in each `STRINGS` block. The water rows are a list in the same order as `WATER_GUIDE`. Superfat rows and oil cards are keyed by `id`. To add an essential oil, add an entry to `ESSENTIAL_OILS` and a matching entry under `guide.eo.oils` in every language.
 
 ### Edit or add translations
 
-All visible text, including oil and preset names, units and screen-reader labels, is in the `STRINGS` object, with one block for `en` and one for `ar`. Both blocks have the same keys. Some entries are functions because a number goes inside the sentence, for example ``totalShort: (p) => `${p} short of 100%` ``.
+All visible text, including oil and preset names, units and screen-reader labels, is in the `STRINGS` object, with one block per language (`en`, `fr`, `ar`). Every block has the same keys. Some entries are functions because a number goes inside the sentence, for example ``totalShort: (p) => `${p} short of 100%` ``.
 
 To change wording, edit the string in the right block. To add a language:
 
-1. Copy the `en` block under a new code, for example `fr`, and translate every value.
-2. Add it to the `options` list in `LanguageToggle`.
-3. If it is right-to-left, update the check in `applyLang` and `makeLocale` (currently `lang === 'ar'`) so it sets `dir="rtl"`.
-4. If its script needs its own font, add the font to the Google Fonts link and override `--font-sans` and `--font-display` for it, as `:root[lang="ar"]` does.
+1. Copy the `en` block under a new code, for example `es`, and translate every value.
+2. Add an entry to `NUMBER_FORMATS` with the language's number locale and percent sign, for example `es: { tag: 'es-ES', pctSign: '\u00a0%' }`.
+3. Add it to the `options` list in `LanguageToggle`, and to the browser-language check in `loadLang` if it should be picked automatically.
+4. If it is right-to-left, update the check in `applyLang` and `makeLocale` (currently `lang === 'ar'`) so it sets `dir="rtl"`.
+5. If its script needs its own font, add the font to the Google Fonts link and override `--font-sans` and `--font-display` for it, as `:root[lang="ar"]` does.
+
+Numbers in the interface go through the formatters from `makeLocale` (`fmtG`, `fmtN`, `fmtFixed`, `fmtPct`, `fmtW`, `fmtU`), so they follow each language's style. Use those rather than `toFixed` or a hard-coded `%` when you add text with numbers in it.
 
 ### Add an oil
 
 1. Add an entry to `OILS`, for example `{ key: 'shea', sap: 0.128, color: 'var(--s-shea)' }`.
-2. Add its name to `oils` in every `STRINGS` block, for example `shea: 'Shea butter'` and `shea: 'زبدة الشيا'`.
+2. Add its name to `oils` in every `STRINGS` block, for example `shea: 'Shea butter'`, `shea: 'Beurre de karité'` and `shea: 'زبدة الشيا'`.
 3. Define `--s-shea` in the `:root` block and in both dark-mode blocks (`@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]`).
 4. Add the new key to `DEFAULTS.pct` and to every preset's `pct`.
 5. Update **Fill the gap with olive oil**. It assumes the three original oils: see `canBalance` in `BlendStatus` and the `onBalance` handler in `SoapCalculator`.
@@ -230,7 +237,7 @@ The component sets `lang` and `dir` on the `<html>` element when the language ch
 ## Project structure
 
 ```
-index.html   the whole app: markup, styles, Tailwind config, English and Arabic text, and the React component
+index.html   the whole app: markup, styles, Tailwind config, English, French and Arabic text, and the React component
 README.md    this file
 ```
 

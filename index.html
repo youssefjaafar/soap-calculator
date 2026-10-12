@@ -487,6 +487,243 @@ const STRINGS = {
     },
   },
 
+  fr: {
+    docTitle: 'Calculateur de savon à froid',
+    eyebrow: 'Saponification à froid · Hydroxyde de sodium',
+    title: 'Calculateur de savon à froid',
+    intro: 'Réglez votre mélange d’huiles, le surgraissage et le rapport eau/soude. Chaque poids de la recette se met à jour au fur et à mesure.',
+    reset: 'Valeurs par défaut',
+    language: 'Langue',
+    units: { g: 'g', oz: 'oz', lb: 'lb' },
+    unitGroup: 'Unité de poids du lot',
+    gPerKg: 'g/kg',
+    oils: { olive: 'Huile d’olive', coconut: 'Huile de coco (76°)', castor: 'Huile de ricin' },
+    presets: { classic: 'Classique', 'high-olive': 'Riche en olive', castile: 'Castille hybride', 'pure-castile': 'Castille pur' },
+
+    batchTitle: 'Paramètres du lot',
+    batchDesc: 'La quantité d’huiles à saponifier, et la quantité d’eau qui dissout la soude.',
+    oilWeight: 'Poids total des huiles',
+    oilWeightAria: 'Poids total des huiles en grammes',
+    waterRatio: 'Rapport eau/soude',
+    lyeConc: (p) => `solution de soude à ${p}`,
+
+    oilsTitle: 'Pourcentages d’huiles',
+    oilsDesc: 'Choisissez un préréglage ou réglez chaque huile. Le mélange doit totaliser 100\u00a0%.',
+    presetGroup: 'Préréglages du mélange d’huiles',
+    sap: (v) => `Indice SAP ${v} NaOH`,
+    pctAria: (name) => `${name}, pourcentage`,
+    totalOk: 'Total des huiles : 100\u00a0%',
+    totalShort: (p) => `Il manque ${p} pour atteindre 100\u00a0%`,
+    totalOver: (p) => `${p} au-dessus de 100\u00a0%`,
+    scale: 'Ramener à 100\u00a0%',
+    fillOlive: 'Compléter avec de l’huile d’olive',
+
+    additivesTitle: 'Additifs',
+    additivesDesc: 'Le surgraissage laisse une partie de l’huile non saponifiée. L’huile essentielle est dosée selon le poids des huiles.',
+    superfat: 'Surgraissage',
+    superfatAria: 'Pourcentage de surgraissage',
+    sfLow: '4\u00a0% · plus nettoyant',
+    sfHigh: '8\u00a0% · plus nourrissant',
+    lyeCut: (g) => `soude réduite de ${g}`,
+    eoUsage: 'Dosage d’huile essentielle',
+    eoAria: 'Dosage d’huile essentielle en grammes par kilogramme d’huiles',
+    eoShare: (p, g) => `${p} des huiles · ${g}`,
+
+    recipeTitle: 'Recette calculée',
+    recipeSub: (oils, sf, ratio) => `${oils} d’huiles · surgraissage ${sf} · eau ${ratio} : 1`,
+    copy: 'Copier la recette',
+    copied: 'Copiée',
+    copyFailed: 'Copie bloquée',
+    unbalancedHead: (p) => `Vos huiles totalisent ${p}.`,
+    unbalancedBody: (actual, target) =>
+      `Ces poids utilisent les pourcentages saisis : les huiles font donc ${actual} au lieu de ${target}. Ramenez le mélange à 100\u00a0% avant de peser quoi que ce soit.`,
+    colIngredient: 'Ingrédient',
+    colPct: '% des huiles',
+    colWeight: 'Poids',
+    groupOils: 'Huiles',
+    groupLye: 'Solution de soude',
+    groupAdditives: 'Additifs',
+    oilDetail: (sap, g) => `SAP ${sap} · demande ${g} de NaOH`,
+    allOils: 'Total des huiles',
+    lye: 'Soude NaOH',
+    lyeDetail: (g, sf) => `${g} sans surgraissage, moins ${sf}`,
+    water: 'Eau distillée',
+    waterDetail: (ratio, conc) => `eau/soude ${ratio} : 1 · solution à ${conc}`,
+    safety: 'Versez la soude dans l’eau, jamais l’eau sur la soude. Portez des lunettes et des gants.',
+    eo: 'Huile essentielle',
+    eoDetail: (rate) => `${rate} g par kg d’huiles`,
+    totalTitle: 'Poids total de la pâte à savon',
+    totalSub: 'Huiles, soude, eau et huile essentielle',
+
+    breakdownTitle: 'Composition du lot',
+    breakdownDesc: 'Survolez un segment ou une ligne de la recette pour voir son poids.',
+    blendTitle: 'Mélange d’huiles',
+    blendNote: 'part du poids des huiles',
+    ofOils: 'des huiles',
+    wetTitle: 'Pâte à savon',
+    wetNote: 'part du poids total',
+    ofBatch: 'du lot',
+    legendOils: 'Huiles',
+    segAria: (label, g, p, of) => `${label} : ${g}, ${p} ${of}`,
+
+    barLye: 'Soude',
+    barWater: 'Eau',
+    barTotal: 'Total',
+    barRecipe: 'Recette',
+    barWarn: (p) => `Total des huiles : ${p}. Ramenez-le à 100\u00a0%.`,
+
+    footer:
+      'Les indices SAP sont les grammes d’hydroxyde de sodium par gramme d’huile : olive 0,135, coco (76°) 0,183, ricin 0,128. Vérifiez toute nouvelle recette avec un second calculateur avant votre premier lot.',
+
+    recipeHeading: 'Recette de savon à froid',
+    recipeMeta: (w, sf, ratio) => `${w} d’huiles · surgraissage ${sf} · eau/soude ${ratio}:1`,
+    eoLine: (rate) => `Huile essentielle (${rate} g/kg)`,
+    totalLine: 'Total pâte à savon',
+
+    guide: {
+      jump: 'Lire le guide de saponification',
+      eyebrow: 'Référence',
+      title: 'Guide de saponification',
+      intro:
+        'Ce que font les réglages ci-dessus, quel surgraissage convient aux cheveux, aux mains ou au corps, comment les huiles essentielles courantes se comportent dans le savon, et les formules derrière chaque chiffre.',
+      use: (v) => `Utiliser ${v}`,
+      current: 'Actuel',
+
+      water: {
+        title: 'Rapport eau/soude',
+        body: [
+          'Le rapport est le poids d’eau divisé par le poids de soude. Moins d’eau donne une solution de soude plus concentrée : la pâte arrive à la trace et durcit plus vite. Plus d’eau laisse plus de temps pour travailler, mais les pains restent mous plus longtemps.',
+          'L’essentiel de l’eau s’évapore pendant les 4 à 6 semaines de cure. Le rapport change donc surtout le comportement du savon en cours de fabrication, plus que le pain final.',
+        ],
+        yours: (ratio, conc) => `Votre réglage : ${ratio} : 1, soit une solution de soude à ${conc}.`,
+        solution: (p) => `solution à ${p}`,
+        rows: [
+          'Trace rapide et démoulage précoce, avec moins de cendre de soude et de retrait. Peu de temps pour les marbrures. Aide les pains riches en olive, lents à prendre.',
+          'Temps de travail équilibré. Un choix fiable pour la plupart des recettes.',
+          'Trace plus lente, avec le temps de faire des marbrures et des couches. Les pains sont plus mous au démoulage.',
+          'Le plus de temps de travail. Les pains peuvent demander quelques jours de plus dans le moule et sont plus sujets à la cendre de soude et au retrait pendant la cure.',
+        ],
+        safety:
+          'L’hydroxyde de sodium cesse de se dissoudre vers 1 : 1 à température ambiante. Ce calculateur s’arrête donc à 1,5 : 1 pour garder une marge de sécurité.',
+      },
+
+      superfat: {
+        title: 'Surgraissage selon l’usage',
+        body: [
+          'Le surgraissage est la part d’huile qui reste non saponifiée, parce que la recette utilise un peu moins de soude que les huiles ne pourraient en absorber. Cette huile libre rend le savon plus doux et plus nourrissant.',
+          'C’est aussi une marge de sécurité. Les indices SAP varient d’un lot d’huile à l’autre, et quelques pour cent d’huile en plus garantissent qu’il ne reste pas de soude libre dans le savon. Un surgraissage élevé donne un pain plus mou, qui mousse moins et rancit plus vite.',
+        ],
+        rows: {
+          hair: {
+            name: 'Cheveux (shampoing solide)',
+            why: 'Moins d’huile libre, pour que les cheveux ne paraissent ni lourds ni gras. L’huile de ricin aide la mousse. Le savon est alcalin (pH 9–10) : un rinçage au vinaigre de cidre dilué adoucit les cheveux, surtout en eau calcaire.',
+          },
+          hands: {
+            name: 'Mains',
+            why: 'Un pain plus dur et plus nettoyant, qui dure près d’un évier très utilisé. Montez vers 6\u00a0% si les lavages fréquents assèchent vos mains.',
+          },
+          body: {
+            name: 'Corps',
+            why: 'Équilibre entre nettoyage et douceur. 5\u00a0% est le point de départ habituel.',
+          },
+          face: {
+            name: 'Visage, peaux sèches ou sensibles',
+            why: 'L’option la plus douce. Les pains sont plus mous et moussent moins : rangez-les au frais et au sec pour ralentir le rancissement.',
+          },
+        },
+      },
+
+      eo: {
+        title: 'Huiles essentielles',
+        body: 'Dosages courants pour un savon rincé, en grammes par kilogramme d’huiles. Réglez la quantité dans « Dosage d’huile essentielle » plus haut. Si vous mélangez plusieurs huiles, le dosage couvre tout le mélange.',
+        scent: 'Odeur',
+        goodFor: 'Idéal pour',
+        pairs: 'S’associe avec',
+        range: 'Dosage habituel',
+        status: {
+          within: (r) => `Vos ${r} sont dans la plage`,
+          above: (r) => `Vos ${r} dépassent cette plage`,
+          below: (r) => `Vos ${r} sont sous cette plage`,
+        },
+        oils: {
+          lavender: {
+            name: 'Lavande vraie',
+            scent: 'Florale, herbacée, douce',
+            goodFor: 'Savons pour le corps et pour le soir, mélanges doux',
+            pairs: 'Romarin, cèdre, menthe poivrée, orange',
+            note: 'Se comporte bien à froid et n’accélère pas la trace. La lavande 40/42 est un mélange standardisé moins cher.',
+          },
+          rosemary: {
+            name: 'Romarin',
+            scent: 'Fraîche, herbacée, camphrée',
+            goodFor: 'Shampoings solides, savon pour les mains en cuisine',
+            pairs: 'Lavande, menthe poivrée, citron',
+            note: 'À ne pas confondre avec l’extrait de romarin (ROE), un antioxydant ajouté aux huiles pour ralentir le rancissement. Le ROE ne parfume pas.',
+          },
+          peppermint: {
+            name: 'Menthe poivrée',
+            scent: 'Vive, mentholée, rafraîchissante',
+            goodFor: 'Savons de douche du matin, savons pour les pieds et après le sport',
+            pairs: 'Eucalyptus, romarin, lavande',
+            note: 'Le menthol picote et peut piquer près des yeux. Elle est puissante : commencez par le bas de la plage.',
+          },
+          lemon: {
+            name: 'Citron',
+            scent: 'Lumineuse, fraîche, zestée',
+            goodFor: 'Savon pour les mains en cuisine, savons tonifiants pour le corps',
+            pairs: 'Litsée citronnée, lavande, romarin',
+            note: 'Les agrumes s’estompent vite à froid. Utilisez un citron concentré (5x ou 10x), ou ajoutez de la litsée citronnée et une note de fond comme le cèdre pour fixer l’odeur.',
+          },
+          orange: {
+            name: 'Orange douce',
+            scent: 'Sucrée, juteuse, joyeuse',
+            goodFor: 'Savons du quotidien pour les mains et le corps',
+            pairs: 'Cèdre, lavande, patchouli',
+            note: 'Bon marché, mais s’estompe comme le citron. L’orange 10x tient beaucoup plus longtemps.',
+          },
+          teaTree: {
+            name: 'Tea tree (arbre à thé)',
+            scent: 'Médicinale, fraîche, camphrée',
+            goodFor: 'Savons pour le visage, les pieds et purifiants',
+            pairs: 'Lavande, menthe poivrée, citron',
+            note: 'Le tea tree oxydé peut irriter la peau. Achetez-le frais et conservez-le au frais, à l’abri de la lumière.',
+          },
+          eucalyptus: {
+            name: 'Eucalyptus',
+            scent: 'Propre, vive, aérienne',
+            goodFor: 'Savons pour douches bien chaudes',
+            pairs: 'Menthe poivrée, romarin, tea tree',
+            note: 'S’estompe assez vite. Associez-le à la menthe poivrée ou à une note de fond.',
+          },
+          cedarwood: {
+            name: 'Cèdre de l’Atlas',
+            scent: 'Chaude, boisée, sèche',
+            goodFor: 'Fixer les odeurs légères, savons mixtes',
+            pairs: 'Orange, lavande, eucalyptus',
+            note: 'Une note de fond : elle s’évapore lentement et aide les agrumes et la menthe à tenir.',
+          },
+        },
+        caution:
+          'Vérifiez la fiche de sécurité ou le certificat IFRA de votre fournisseur pour le dosage maximal de chaque huile. N’utilisez pas de menthe poivrée, d’eucalyptus ni de romarin dans les savons pour bébés et jeunes enfants. Évitez l’écorce de cannelle et le clou de girofle : ils irritent la peau et peuvent faire figer la pâte.',
+      },
+
+      formulas: {
+        title: 'Comment les chiffres sont calculés',
+        body: 'Chaque étape est calculée avec votre recette actuelle, dans l’ordre suivi par le calculateur.',
+        steps: {
+          oil: { name: 'Poids de chaque huile', formula: 'poids total des huiles × % de l’huile ÷ 100' },
+          unadjusted: { name: 'Soude avant surgraissage', formula: 'somme de (poids de chaque huile × son indice SAP)' },
+          lye: { name: 'Soude NaOH', formula: 'soude avant surgraissage × (1 − surgraissage % ÷ 100)' },
+          water: { name: 'Eau distillée', formula: 'soude NaOH × rapport eau/soude' },
+          eo: { name: 'Huile essentielle', formula: 'poids total des huiles × dosage ÷ 1000' },
+          total: { name: 'Total de la pâte', formula: 'huiles + soude NaOH + eau + huile essentielle' },
+          conc: { name: 'Concentration de la soude', formula: 'soude NaOH ÷ (soude NaOH + eau)' },
+        },
+        rounding: 'Chaque étape utilise les valeurs non arrondies : un résultat peut différer de la somme de ses parties arrondies de 0,01 g.',
+      },
+    },
+  },
+
   ar: {
     docTitle: 'حاسبة الصابون على البارد',
     eyebrow: 'الطريقة الباردة · هيدروكسيد الصوديوم',
@@ -796,7 +1033,8 @@ function loadLang() {
     const saved = localStorage.getItem(LANG_KEY);
     if (STRINGS[saved]) return saved;
   } catch {}
-  return (navigator.language || '').toLowerCase().startsWith('ar') ? 'ar' : 'en';
+  const browser = (navigator.language || '').toLowerCase();
+  return browser.startsWith('ar') ? 'ar' : browser.startsWith('fr') ? 'fr' : 'en';
 }
 
 function applyLang(lang) {
@@ -808,13 +1046,13 @@ function applyLang(lang) {
 
 // ---- Formatting -------------------------------------------------------------
 
-// Numbers use Western digits in both languages, matching what kitchen scales display.
-const grams2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtG = (g) => grams2.format(g);
-const fmtPct = (p, digits = 1) =>
-  `${new Intl.NumberFormat('en-US', { maximumFractionDigits: digits }).format(p)}%`;
-const plain = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
-const fmtN = (v) => plain.format(v);
+// How each language writes numbers. Arabic keeps Western digits, matching what kitchen
+// scales display; French uses its own separators and a space before % (1 434,27 · 33,3 %).
+const NUMBER_FORMATS = {
+  en: { tag: 'en-US', pctSign: '%' },
+  fr: { tag: 'fr-FR', pctSign: '\u00a0%' },
+  ar: { tag: 'en-US', pctSign: '%' },
+};
 
 function scrollToId(id) {
   const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -823,18 +1061,34 @@ function scrollToId(id) {
 
 function makeLocale(lang) {
   const t = STRINGS[lang];
+  const { tag, pctSign } = NUMBER_FORMATS[lang];
+  const cache = {};
+  // French Intl output groups thousands with a narrow no-break space (U+202F), which the
+  // page's sans face draws with no width; a regular no-break space shows in every face.
+  const fmt = (min, max) => {
+    const nf = (cache[`${min}-${max}`] ??= new Intl.NumberFormat(tag, { minimumFractionDigits: min, maximumFractionDigits: max }));
+    return (v) => nf.format(v).replace(/\u202f/g, '\u00a0');
+  };
+  const fmtG = (g) => fmt(2, 2)(g);
   return {
     lang,
     t,
     rtl: lang === 'ar',
-    // A weight in grams with two decimals, e.g. "134.76 g".
+    // A weight in grams with two decimals, e.g. "1,434.27".
+    fmtG,
+    // A plain number with up to two decimals, e.g. "1,000" or "2.5".
+    fmtN: (v) => fmt(0, 2)(v),
+    // A number with exactly `digits` decimals, e.g. "2.0" or "0.135".
+    fmtFixed: (v, digits) => fmt(digits, digits)(v),
+    // A percentage with up to `digits` decimals, e.g. "33.3%".
+    fmtPct: (p, digits = 1) => `${fmt(0, digits)(p)}${pctSign}`,
+    // A weight in grams with its unit, e.g. "134.76 g".
     fmtW: (g) => `${fmtG(g)} ${t.units.g}`,
     // A weight converted to one of UNITS, e.g. "35.27 oz".
     fmtU: (g, unit) => {
       const { gramsPer, decimals } = UNITS[unit];
       const digits = unit === 'g' ? 0 : decimals;
-      const n = new Intl.NumberFormat('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(g / gramsPer);
-      return `${n} ${t.units[unit]}`;
+      return `${fmt(digits, digits)(g / gramsPer)} ${t.units[unit]}`;
     },
   };
 }
@@ -843,12 +1097,12 @@ const LocaleContext = createContext(makeLocale('en'));
 const useLocale = () => useContext(LocaleContext);
 
 function recipeText(r, s, locale) {
-  const { t, fmtW, rtl } = locale;
-  // English lines are padded into columns; Arabic is right-to-left, so a plain "label: value" reads better.
+  const { t, fmtW, fmtN, fmtPct, fmtFixed, rtl } = locale;
+  // English and French lines are padded into columns; Arabic is right-to-left, so a plain "label: value" reads better.
   const line = (label, value) => (rtl ? `${label}: ${value}` : `${label.padEnd(28, ' ')}${value.padStart(12, ' ')}`);
   return [
     t.recipeHeading,
-    t.recipeMeta(fmtW(s.oilGrams), fmtPct(s.superfat), s.waterRatio.toFixed(1)),
+    t.recipeMeta(fmtW(s.oilGrams), fmtPct(s.superfat), fmtFixed(s.waterRatio, 1)),
     '',
     t.groupOils.toUpperCase(),
     ...r.oils.map((o) => line(`${t.oils[o.key]} ${fmtPct(o.pct)}`, fmtW(o.grams))),
@@ -858,7 +1112,7 @@ function recipeText(r, s, locale) {
     line(t.water, fmtW(r.water)),
     '',
     t.groupAdditives.toUpperCase(),
-    line(t.eoLine(s.eoRate), fmtW(r.eo)),
+    line(t.eoLine(fmtN(s.eoRate)), fmtW(r.eo)),
     '',
     line(t.totalLine, fmtW(r.total)),
   ].join('\n');
@@ -1044,6 +1298,7 @@ function LanguageToggle({ value, onChange }) {
       buttonClass="px-2.5 py-1 text-sm font-medium"
       options={[
         { value: 'en', label: 'EN', lang: 'en' },
+        { value: 'fr', label: 'FR', lang: 'fr' },
         { value: 'ar', label: 'عربي', lang: 'ar' },
       ]}
     />
@@ -1112,7 +1367,7 @@ function PresetButtons({ pct, onApply }) {
 }
 
 function BlendStatus({ pct, total, onScale, onBalance }) {
-  const { t } = useLocale();
+  const { t, fmtPct } = useLocale();
   const balanced = Math.abs(total - 100) < 0.001;
   const diff = total - 100;
   const scaleMax = Math.max(100, total);
@@ -1172,20 +1427,21 @@ function Swatch({ colors }) {
 
 // Scale under each bar. Logical positions, so 0% sits at the start edge in either direction.
 function Ticks() {
+  const { fmtPct } = useLocale();
   return (
     <div className="relative -mt-1 h-4" aria-hidden="true">
       {[0, 25, 50, 75, 100].map((t) => (
         <span key={t} className="absolute top-0 h-1.5 w-px bg-line" style={{ insetInlineStart: `calc(${t}% - ${t === 100 ? 1 : 0}px)` }} />
       ))}
-      <span className="absolute start-0 top-1.5 font-mono text-[10px] text-muted">0%</span>
-      <span className="absolute left-1/2 top-1.5 -translate-x-1/2 font-mono text-[10px] text-muted">50%</span>
-      <span className="absolute end-0 top-1.5 font-mono text-[10px] text-muted">100%</span>
+      <span className="absolute start-0 top-1.5 font-mono text-[10px] text-muted">{fmtPct(0)}</span>
+      <span className="absolute left-1/2 top-1.5 -translate-x-1/2 font-mono text-[10px] text-muted">{fmtPct(50)}</span>
+      <span className="absolute end-0 top-1.5 font-mono text-[10px] text-muted">{fmtPct(100)}</span>
     </div>
   );
 }
 
 function StackedBar({ title, note, segments, groups = {}, legend, shareLabel, hoverKey, onHover }) {
-  const { rtl, fmtW, t } = useLocale();
+  const { rtl, fmtW, fmtPct, t } = useLocale();
   const shown = segments.filter((s) => s.value > 0);
   const total = sum(shown.map((s) => s.value));
   let cursor = 0;
@@ -1289,7 +1545,7 @@ function GroupRow({ label }) {
 }
 
 function ItemRow({ id, color, name, detail, pct, grams, unit, strong, hoverKey, onHover }) {
-  const { t, fmtU } = useLocale();
+  const { t, fmtG, fmtU } = useLocale();
   return (
     <tr
       onMouseEnter={() => onHover(id)}
@@ -1322,7 +1578,7 @@ function ItemRow({ id, color, name, detail, pct, grams, unit, strong, hoverKey, 
 
 function RecipeCard({ r, state, hoverKey, onHover, cardRef }) {
   const locale = useLocale();
-  const { t, fmtW, fmtU } = locale;
+  const { t, fmtG, fmtN, fmtW, fmtU, fmtPct, fmtFixed } = locale;
   const { oilGrams, unit, superfat, waterRatio, eoRate } = state;
   const [copyState, setCopyState] = useState('idle');
   const timer = useRef(null);
@@ -1347,7 +1603,7 @@ function RecipeCard({ r, state, hoverKey, onHover, cardRef }) {
       <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5 sm:px-6 sm:pt-6">
         <div className="min-w-0">
           <h2 id="recipe-title" className="font-display text-xl font-semibold leading-tight text-ink rtl:leading-snug">{t.recipeTitle}</h2>
-          <p className="mt-1 text-sm text-muted">{t.recipeSub(oilsLabel, fmtPct(superfat), waterRatio.toFixed(1))}</p>
+          <p className="mt-1 text-sm text-muted">{t.recipeSub(oilsLabel, fmtPct(superfat), fmtFixed(waterRatio, 1))}</p>
         </div>
         <button
           type="button"
@@ -1387,7 +1643,7 @@ function RecipeCard({ r, state, hoverKey, onHover, cardRef }) {
                 id={o.key}
                 color={o.color}
                 name={t.oils[o.key]}
-                detail={t.oilDetail(o.sap.toFixed(3), fmtW(o.lye))}
+                detail={t.oilDetail(fmtFixed(o.sap, 3), fmtW(o.lye))}
                 pct={fmtPct(o.pct)}
                 grams={o.grams}
                 unit={unit}
@@ -1414,7 +1670,7 @@ function RecipeCard({ r, state, hoverKey, onHover, cardRef }) {
               id="water"
               color={COLORS.water}
               name={t.water}
-              detail={t.waterDetail(waterRatio.toFixed(1), `${r.lyeConcentration.toFixed(1)}%`)}
+              detail={t.waterDetail(fmtFixed(waterRatio, 1), fmtPct(r.lyeConcentration))}
               pct={ofOils(r.water)}
               grams={r.water}
               unit={unit}
@@ -1436,7 +1692,7 @@ function RecipeCard({ r, state, hoverKey, onHover, cardRef }) {
               id="eo"
               color={COLORS.eo}
               name={t.eo}
-              detail={t.eoDetail(eoRate)}
+              detail={t.eoDetail(fmtN(eoRate))}
               pct={ofOils(r.eo)}
               grams={r.eo}
               unit={unit}
@@ -1507,7 +1763,7 @@ function BreakdownCard({ r, hoverKey, onHover }) {
 }
 
 function SummaryBar({ r }) {
-  const { t, fmtW } = useLocale();
+  const { t, fmtW, fmtPct } = useLocale();
   return (
     <div
       className="rise fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface shadow-[0_-8px_24px_-12px_rgb(0_0_0/0.25)]"
@@ -1581,23 +1837,23 @@ function UseButton({ active, label, onClick }) {
 }
 
 function WaterGuide({ waterRatio, lyeConcentration, onUse }) {
-  const { t } = useLocale();
+  const { t, fmtPct, fmtFixed } = useLocale();
   const g = t.guide.water;
   return (
     <GuideCard id="guide-water" title={g.title}>
       {g.body.map((p, i) => <Prose key={i}>{p}</Prose>)}
-      <p className="text-sm font-medium text-ink">{g.yours(waterRatio.toFixed(1), fmtPct(lyeConcentration))}</p>
+      <p className="text-sm font-medium text-ink">{g.yours(fmtFixed(waterRatio, 1), fmtPct(lyeConcentration))}</p>
       <ul className="divide-y divide-line border-y border-line">
         {WATER_GUIDE.map((ratio, i) => (
           <li key={ratio} className="flex flex-col gap-1 py-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                <span className="font-mono text-sm font-semibold tabular-nums text-ink">{ratio.toFixed(1)} : 1</span>
+                <span className="font-mono text-sm font-semibold tabular-nums text-ink">{fmtFixed(ratio, 1)} : 1</span>
                 <span className="text-xs text-muted">{g.solution(fmtPct(100 / (1 + ratio)))}</span>
               </div>
               <UseButton
                 active={Math.abs(waterRatio - ratio) < 0.001}
-                label={t.guide.use(`${ratio.toFixed(1)} : 1`)}
+                label={t.guide.use(`${fmtFixed(ratio, 1)} : 1`)}
                 onClick={() => onUse(ratio)}
               />
             </div>
@@ -1614,7 +1870,7 @@ function WaterGuide({ waterRatio, lyeConcentration, onUse }) {
 }
 
 function SuperfatGuide({ superfat, onUse }) {
-  const { t } = useLocale();
+  const { t, fmtN, fmtPct } = useLocale();
   const g = t.guide.superfat;
   return (
     <GuideCard id="guide-superfat" title={g.title}>
@@ -1625,7 +1881,7 @@ function SuperfatGuide({ superfat, onUse }) {
             <div className="flex items-center justify-between gap-3">
               <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                 <span className="text-sm font-semibold text-ink">{g.rows[row.id].name}</span>
-                <span className="font-mono text-xs tabular-nums text-muted">{`${row.min}–${row.max}%`}</span>
+                <span className="font-mono text-xs tabular-nums text-muted">{`${fmtN(row.min)}–${fmtPct(row.max)}`}</span>
               </div>
               <UseButton
                 active={Math.abs(superfat - row.use) < 0.001}
@@ -1642,7 +1898,7 @@ function SuperfatGuide({ superfat, onUse }) {
 }
 
 function EssentialOilGuide({ eoRate, onUse }) {
-  const { t } = useLocale();
+  const { t, fmtN } = useLocale();
   const g = t.guide.eo;
   return (
     <GuideCard id="guide-eo" title={g.title} className="mt-6">
@@ -1680,7 +1936,7 @@ function EssentialOilGuide({ eoRate, onUse }) {
                   >
                     {status === 'within' && <CheckIcon className="h-3.5 w-3.5 shrink-0" />}
                     {status === 'above' && <WarnIcon className="h-3.5 w-3.5 shrink-0" />}
-                    {g.status[status](`${eoRate} ${t.gPerKg}`)}
+                    {g.status[status](`${fmtN(eoRate)} ${t.gPerKg}`)}
                   </span>
                   <UseButton active={eoRate === use} label={t.guide.use(`${use} ${t.gPerKg}`)} onClick={() => onUse(use)} />
                 </div>
@@ -1699,12 +1955,12 @@ function EssentialOilGuide({ eoRate, onUse }) {
 
 // The calculation steps, each worked with the current recipe.
 function FormulaGuide({ r, state }) {
-  const { t, fmtW } = useLocale();
+  const { t, fmtG, fmtN, fmtW, fmtPct, fmtFixed } = useLocale();
   const g = t.guide.formulas;
   const { oilGrams, superfat, waterRatio, eoRate } = state;
   const steps = [
     { key: 'oil', lines: r.oils.map((o) => `${t.oils[o.key]}: ${fmtN(oilGrams)} × ${fmtN(o.pct)} ÷ 100 = ${fmtW(o.grams)}`) },
-    { key: 'unadjusted', lines: [`${r.oils.map((o) => `${fmtG(o.grams)} × ${o.sap.toFixed(3)}`).join(' + ')} = ${fmtW(r.unadjustedLye)}`] },
+    { key: 'unadjusted', lines: [`${r.oils.map((o) => `${fmtG(o.grams)} × ${fmtFixed(o.sap, 3)}`).join(' + ')} = ${fmtW(r.unadjustedLye)}`] },
     { key: 'lye', lines: [`${fmtG(r.unadjustedLye)} × (1 − ${fmtN(superfat)} ÷ 100) = ${fmtW(r.lye)}`] },
     { key: 'water', lines: [`${fmtG(r.lye)} × ${fmtN(waterRatio)} = ${fmtW(r.water)}`] },
     { key: 'eo', lines: [`${fmtN(oilGrams)} × ${fmtN(eoRate)} ÷ 1000 = ${fmtW(r.eo)}`] },
@@ -1769,7 +2025,7 @@ function SoapCalculator() {
   const recipeInView = useInView(recipeRef);
 
   const locale = useMemo(() => makeLocale(lang), [lang]);
-  const { t, fmtW, fmtU } = locale;
+  const { t, fmtN, fmtW, fmtU, fmtPct, fmtFixed } = locale;
   const { oilGrams, unit, waterRatio, pct, superfat, eoRate } = state;
   const update = (patch) => setState((s) => ({ ...s, ...patch }));
   const setPct = (key, v) => setState((s) => ({ ...s, pct: { ...s.pct, [key]: v } }));
@@ -1878,11 +2134,11 @@ function SoapCalculator() {
                     min={L.waterRatio.min}
                     max={L.waterRatio.max}
                     step={L.waterRatio.step}
-                    valueText={`${waterRatio.toFixed(1)} : 1`}
+                    valueText={`${fmtFixed(waterRatio, 1)} : 1`}
                     onChange={(v) => update({ waterRatio: v })}
                   />
                 }
-                footer={['1.5 : 1', t.lyeConc(`${r.lyeConcentration.toFixed(1)}%`), '3.0 : 1']}
+                footer={[`${fmtFixed(1.5, 1)} : 1`, t.lyeConc(fmtPct(r.lyeConcentration)), `${fmtFixed(3, 1)} : 1`]}
               />
             </Section>
 
@@ -1938,7 +2194,7 @@ function SoapCalculator() {
                       onChange={(v) => setPct(o.key, v)}
                     />
                   }
-                  footer={[t.sap(o.sap.toFixed(3)), <span className="font-mono tabular-nums text-ink-2">{fmtW(o.grams)}</span>]}
+                  footer={[t.sap(fmtFixed(o.sap, 3)), <span className="font-mono tabular-nums text-ink-2">{fmtW(o.grams)}</span>]}
                 />
               ))}
               <BlendStatus
@@ -2005,7 +2261,7 @@ function SoapCalculator() {
                     max={L.eoRate.max}
                     step={L.eoRate.step}
                     fill={COLORS.eo}
-                    valueText={`${eoRate} ${t.gPerKg}`}
+                    valueText={`${fmtN(eoRate)} ${t.gPerKg}`}
                     onChange={(v) => update({ eoRate: v })}
                   />
                 }
