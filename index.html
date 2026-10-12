@@ -27,10 +27,10 @@
     --ok: #2f6a1d;
     --ok-soft: #e4efdb;
 
-    /* Chart series, in the validated adjacency order olive > coconut > castor > water > lye > EO */
-    --s-olive: #5f8a1e;
-    --s-coconut: #c9418a;
-    --s-castor: #eda100;
+    --band: #bcd59a;
+
+    /* Chart series, in the validated adjacency order oils > water > lye > EO */
+    --s-oils: #5f8a1e;
     --s-water: #2a78d6;
     --s-lye: #eb6834;
     --s-eo: #7656cf;
@@ -49,8 +49,8 @@
       --ink: #edf0e8; --ink-2: #bcc3b4; --muted: #8d9587; --line: #2f3429; --track: #343b2e;
       --accent: #a8c66b; --accent-soft: #2a3421;
       --warn: #f2b65a; --warn-soft: #2d2413; --warn-line: #5c4720;
-      --ok: #95cf72; --ok-soft: #1f2c19;
-      --s-olive: #6c9a26; --s-coconut: #d55181; --s-castor: #c98500;
+      --ok: #95cf72; --ok-soft: #1f2c19; --band: #4c6a32;
+      --s-oils: #6c9a26;
       --s-water: #3987e5; --s-lye: #d95926; --s-eo: #9085e9;
       color-scheme: dark;
     }
@@ -60,8 +60,8 @@
     --ink: #edf0e8; --ink-2: #bcc3b4; --muted: #8d9587; --line: #2f3429; --track: #343b2e;
     --accent: #a8c66b; --accent-soft: #2a3421;
     --warn: #f2b65a; --warn-soft: #2d2413; --warn-line: #5c4720;
-    --ok: #95cf72; --ok-soft: #1f2c19;
-    --s-olive: #6c9a26; --s-coconut: #d55181; --s-castor: #c98500;
+    --ok: #95cf72; --ok-soft: #1f2c19; --band: #4c6a32;
+    --s-oils: #6c9a26;
     --s-water: #3987e5; --s-lye: #d95926; --s-eo: #9085e9;
     color-scheme: dark;
   }
@@ -158,6 +158,7 @@
           'warn-line': 'var(--warn-line)',
           ok: 'var(--ok)',
           'ok-soft': 'var(--ok-soft)',
+          band: 'var(--band)',
         },
         fontFamily: {
           display: ['var(--font-display)'],
@@ -181,17 +182,56 @@
  * project, copy everything above the render call, import the hooks from 'react',
  * and carry over the CSS tokens and the Tailwind colour/font extension above.
  */
-const { useState, useMemo, useEffect, useLayoutEffect, useRef, createContext, useContext } = React;
+const { useState, useMemo, useEffect, useLayoutEffect, useRef, useId, createContext, useContext } = React;
 
 // ---- Recipe data ------------------------------------------------------------
 
+// Oils you can use, from SoapCalc's oil table (soapcalc.net/oil-list): the NaOH SAP value as
+// SoapCalc shows it (3 decimals), iodine and INS values, and each fatty acid as % of the oil.
 // Display names live in STRINGS so they can be translated.
-const OILS = [
-  { key: 'olive',   sap: 0.135, color: 'var(--s-olive)' },
-  { key: 'coconut', sap: 0.183, color: 'var(--s-coconut)' },
-  { key: 'castor',  sap: 0.128, color: 'var(--s-castor)' },
+const FATTY_ACIDS = ['lauric', 'myristic', 'palmitic', 'stearic', 'ricinoleic', 'oleic', 'linoleic', 'linolenic'];
+const OIL_LIBRARY = [
+  //         key            sap   iodine INS   lau myr pal ste ric ole lin lnn
+  defineOil('olive',       0.135,  85, 105, [ 0,  0, 14,  3,  0, 69, 12,  1]),
+  defineOil('coconut',     0.183,  10, 258, [48, 19,  9,  3,  0,  8,  2,  0]),
+  defineOil('castor',      0.128,  86,  95, [ 0,  0,  0,  0, 90,  4,  4,  0]),
+  defineOil('shea',        0.128,  59, 116, [ 0,  0,  5, 40,  0, 48,  6,  0]),
+  defineOil('cocoa',       0.138,  37, 157, [ 0,  0, 28, 33,  0, 35,  3,  0]),
+  defineOil('mango',       0.136,  45, 146, [ 0,  0,  7, 42,  0, 45,  3,  0]),
+  defineOil('palm',        0.142,  53, 145, [ 0,  1, 44,  5,  0, 39, 10,  0]),
+  defineOil('palmKernel',  0.176,  20, 227, [49, 16,  8,  2,  0, 15,  3,  0]),
+  defineOil('babassu',     0.175,  15, 230, [50, 20, 11,  4,  0, 10,  0,  0]),
+  defineOil('almond',      0.139,  99,  97, [ 0,  0,  7,  0,  0, 71, 18,  0]),
+  defineOil('avocado',     0.133,  86,  99, [ 0,  0, 20,  2,  0, 58, 12,  0]),
+  defineOil('sunflower',   0.135, 133,  63, [ 0,  0,  7,  4,  0, 16, 70,  1]),
+  defineOil('sunflowerHO', 0.135,  83, 106, [ 0,  0,  3,  4,  0, 83,  4,  1]),
+  defineOil('riceBran',    0.133, 100,  87, [ 0,  1, 22,  3,  0, 38, 34,  2]),
+  defineOil('hemp',        0.138, 165,  39, [ 0,  0,  6,  2,  0, 12, 57, 21]),
+  defineOil('lard',        0.141,  57, 139, [ 0,  1, 28, 13,  0, 46,  6,  0]),
+  defineOil('tallow',      0.143,  45, 147, [ 2,  6, 28, 22,  0, 36,  3,  1]),
 ];
-const COLORS = { water: 'var(--s-water)', lye: 'var(--s-lye)', eo: 'var(--s-eo)' };
+const OIL_BY_KEY = Object.fromEntries(OIL_LIBRARY.map((o) => [o.key, o]));
+const MAX_OILS = 8;
+// Above this share, castor oil tends to make a soft, sticky bar.
+const CASTOR_WARN_ABOVE = 10;
+
+function defineOil(key, sap, iodine, ins, acids) {
+  return { key, sap, iodine, ins, fa: Object.fromEntries(FATTY_ACIDS.map((a, i) => [a, acids[i]])) };
+}
+
+// SoapCalc's bar qualities and their usual ranges. Each one adds up some fatty acids (as % of
+// the blend); iodine and INS average the oils' own values instead. `scale` is the meter's top.
+const QUALITIES = [
+  { key: 'hardness',     acids: ['lauric', 'myristic', 'palmitic', 'stearic'],    min: 29,  max: 54,  scale: 100 },
+  { key: 'cleansing',    acids: ['lauric', 'myristic'],                           min: 12,  max: 22,  scale: 100 },
+  { key: 'conditioning', acids: ['oleic', 'linoleic', 'linolenic', 'ricinoleic'], min: 44,  max: 69,  scale: 100 },
+  { key: 'bubbly',       acids: ['lauric', 'myristic', 'ricinoleic'],             min: 14,  max: 46,  scale: 100 },
+  { key: 'creamy',       acids: ['palmitic', 'stearic', 'ricinoleic'],            min: 16,  max: 48,  scale: 100 },
+  { key: 'iodine',                                                                min: 41,  max: 70,  scale: 180 },
+  { key: 'ins',                                                                   min: 136, max: 165, scale: 300 },
+];
+
+const COLORS = { oils: 'var(--s-oils)', water: 'var(--s-water)', lye: 'var(--s-lye)', eo: 'var(--s-eo)' };
 
 const PRESETS = [
   { id: 'classic',    pct: { olive: 70, coconut: 25, castor: 5 } },
@@ -219,7 +259,7 @@ const DEFAULTS = {
   oilGrams: 1000,
   unit: 'g',
   waterRatio: 2,
-  pct: { olive: 80, coconut: 15, castor: 5 },
+  blend: [{ key: 'olive', pct: 80 }, { key: 'coconut', pct: 15 }, { key: 'castor', pct: 5 }],
   superfat: 5,
   eoRate: 30,
 };
@@ -260,7 +300,25 @@ const STRINGS = {
     units: { g: 'g', oz: 'oz', lb: 'lb' },
     unitGroup: 'Batch weight unit',
     gPerKg: 'g/kg',
-    oils: { olive: 'Olive oil', coconut: 'Coconut oil (76°)', castor: 'Castor oil' },
+    oils: {
+      olive: 'Olive oil',
+      coconut: 'Coconut oil (76°)',
+      castor: 'Castor oil',
+      shea: 'Shea butter',
+      cocoa: 'Cocoa butter',
+      mango: 'Mango butter',
+      palm: 'Palm oil',
+      palmKernel: 'Palm kernel oil',
+      babassu: 'Babassu oil',
+      almond: 'Sweet almond oil',
+      avocado: 'Avocado oil',
+      sunflower: 'Sunflower oil',
+      sunflowerHO: 'Sunflower oil (high oleic)',
+      riceBran: 'Rice bran oil',
+      hemp: 'Hemp seed oil',
+      lard: 'Lard',
+      tallow: 'Beef tallow',
+    },
     presets: { classic: 'Classic', 'high-olive': 'High Olive', castile: 'Castile Hybrid', 'pure-castile': 'Pure Castile' },
 
     batchTitle: 'Batch parameters',
@@ -271,7 +329,7 @@ const STRINGS = {
     lyeConc: (p) => `${p} lye concentration`,
 
     oilsTitle: 'Oil percentages',
-    oilsDesc: 'Pick a preset or set each oil. The blend has to total 100%.',
+    oilsDesc: 'Pick a preset, set each oil, or add more oils. The blend has to total 100%.',
     presetGroup: 'Oil blend presets',
     sap: (v) => `SAP ${v} NaOH`,
     pctAria: (name) => `${name} percentage`,
@@ -279,7 +337,13 @@ const STRINGS = {
     totalShort: (p) => `${p} short of 100%`,
     totalOver: (p) => `${p} over 100%`,
     scale: 'Scale to 100%',
-    fillOlive: 'Fill the gap with olive oil',
+    fillWith: (name) => `Fill the gap: ${name}`,
+    addOil: 'Add an oil',
+    addOilTitle: 'Choose an oil to add',
+    addOilHint: 'New oils start at 0%. Set their share, then bring the blend back to 100%.',
+    maxOils: (n) => `A recipe can have up to ${n} oils.`,
+    removeOil: (name) => `Remove ${name}`,
+    castorHigh: 'Above 10%, castor oil tends to make a soft, sticky bar. Most recipes use 5–8%.',
 
     additivesTitle: 'Additives',
     additivesDesc: 'Superfat leaves some oil unsaponified. Essential oil is dosed against the oil weight.',
@@ -336,12 +400,95 @@ const STRINGS = {
     barWarn: (p) => `Oils total ${p}. Set them to 100%.`,
 
     footer:
-      'SAP values are grams of sodium hydroxide per gram of oil: olive 0.135, coconut (76°) 0.183, castor 0.128. Check a new recipe against a second calculator before your first batch.',
+      "SAP, iodine, INS and fatty acid values come from SoapCalc's oil table (soapcalc.net). Check a new recipe against a second calculator before your first batch.",
 
     recipeHeading: 'Cold-process soap recipe',
     recipeMeta: (w, sf, ratio) => `${w} oils · ${sf} superfat · ${ratio}:1 water to lye`,
     eoLine: (rate) => `Essential oil (${rate} g/kg)`,
     totalLine: 'Total wet batch',
+
+    undo: 'Undo',
+    dismiss: 'Dismiss',
+    toastReset: 'Recipe reset to defaults.',
+    toastPreset: (name) => `Applied the ${name} blend.`,
+    toastAdded: (name) => `Added ${name}.`,
+    toastRemoved: (name) => `Removed ${name}.`,
+    toastScaled: 'Oils scaled to 100%.',
+    toastFilled: (name) => `${name} adjusted to bring the blend to 100%.`,
+    toastSet: (what, value) => `${what} set to ${value}.`,
+
+    helpFor: (label) => `Help: ${label}`,
+    guideLink: 'More in the guide',
+    help: {
+      water: 'Water divided by lye. Less water traces faster and unmolds sooner; more water gives you longer to work, but bars stay soft for longer. 2 : 1 suits most recipes.',
+      oils: 'Each oil needs a different amount of lye to become soap: its SAP value, in grams of NaOH per gram of oil. The blend must total 100% so the weights match your batch.',
+      superfat: 'Oil left unsaponified on purpose, as a safety margin and for a milder bar. About 5% suits body bars, 4–5% shampoo bars, and 7–8% dry or sensitive skin.',
+      eo: 'Grams of essential oil per kilogram of oils. 30 g/kg (3%) is a common start; strong oils such as peppermint need less.',
+      qualities: "Predicted from the fatty acids in your oils, using SoapCalc's method. The shaded band is the usual range. Being outside it isn't wrong: it tells you how the bar will behave. High-olive bars, for example, are soft and very conditioning, and need a longer cure.",
+    },
+
+    qualities: {
+      title: 'Bar qualities',
+      desc: 'Predicted from the fatty acids in your oils.',
+      usual: (range) => `usual ${range}`,
+      status: { low: 'Low', ok: 'In range', high: 'High' },
+      acidsShow: 'Show the fatty acid profile',
+      acidsHide: 'Hide the fatty acid profile',
+      acids: {
+        lauric: 'Lauric',
+        myristic: 'Myristic',
+        palmitic: 'Palmitic',
+        stearic: 'Stearic',
+        ricinoleic: 'Ricinoleic',
+        oleic: 'Oleic',
+        linoleic: 'Linoleic',
+        linolenic: 'Linolenic',
+      },
+      items: {
+        hardness: {
+          name: 'Hardness',
+          low: 'A soft bar: it needs a longer cure and wears faster. Normal for high-olive soap.',
+          ok: 'A firm bar that lasts well.',
+          high: 'A very hard bar that can be brittle and crack when cut.',
+        },
+        cleansing: {
+          name: 'Cleansing',
+          low: 'Mild: cleans gently without stripping skin.',
+          ok: 'Cleans well without being harsh.',
+          high: 'Strips oils and can feel drying. A higher superfat helps.',
+        },
+        conditioning: {
+          name: 'Conditioning',
+          low: 'Less conditioning, so the bar can feel drying.',
+          ok: 'Leaves skin feeling soft.',
+          high: 'Very conditioning. Mostly liquid oils, so the bar is softer and slower to harden.',
+        },
+        bubbly: {
+          name: 'Bubbly lather',
+          low: 'Few big bubbles; the lather is low or dense.',
+          ok: 'A good amount of fluffy lather.',
+          high: 'Lots of big, fast bubbles.',
+        },
+        creamy: {
+          name: 'Creamy lather',
+          low: 'A thin lather that fades quickly.',
+          ok: 'A dense, stable lather.',
+          high: 'A very dense, lotion-like lather.',
+        },
+        iodine: {
+          name: 'Iodine',
+          low: 'Mostly hard, stable fats.',
+          ok: 'Firm, and not especially prone to rancidity.',
+          high: 'Many unsaturated oils: a softer bar that is more prone to rancidity (orange spots).',
+        },
+        ins: {
+          name: 'INS',
+          low: 'A softer bar that needs a longer cure.',
+          ok: 'A balanced, firm bar. 160 is often cited as ideal.',
+          high: 'A very hard bar.',
+        },
+      },
+    },
 
     guide: {
       jump: 'Read the soapmaking guide',
@@ -482,6 +629,10 @@ const STRINGS = {
           total: { name: 'Total wet batch', formula: 'oils + NaOH lye + water + essential oil' },
           conc: { name: 'Lye concentration', formula: 'NaOH lye ÷ (NaOH lye + water)' },
         },
+        qualitiesTitle: 'Bar qualities',
+        qualitiesBody:
+          "SoapCalc's method: each quality adds up certain fatty acids, as a percentage of the whole blend. Iodine and INS average each oil's own value, weighted by its share.",
+        weighted: { iodine: "sum of (oil's share × its iodine value)", ins: "sum of (oil's share × its INS value)" },
         rounding: 'Every step uses unrounded values, so a result can differ from the sum of its rounded parts by 0.01 g.',
       },
     },
@@ -497,7 +648,25 @@ const STRINGS = {
     units: { g: 'g', oz: 'oz', lb: 'lb' },
     unitGroup: 'Unité de poids du lot',
     gPerKg: 'g/kg',
-    oils: { olive: 'Huile d’olive', coconut: 'Huile de coco (76°)', castor: 'Huile de ricin' },
+    oils: {
+      olive: 'Huile d’olive',
+      coconut: 'Huile de coco (76°)',
+      castor: 'Huile de ricin',
+      shea: 'Beurre de karité',
+      cocoa: 'Beurre de cacao',
+      mango: 'Beurre de mangue',
+      palm: 'Huile de palme',
+      palmKernel: 'Huile de palmiste',
+      babassu: 'Huile de babassu',
+      almond: 'Huile d’amande douce',
+      avocado: 'Huile d’avocat',
+      sunflower: 'Huile de tournesol',
+      sunflowerHO: 'Huile de tournesol oléique',
+      riceBran: 'Huile de son de riz',
+      hemp: 'Huile de chanvre',
+      lard: 'Saindoux',
+      tallow: 'Suif de bœuf',
+    },
     presets: { classic: 'Classique', 'high-olive': 'Riche en olive', castile: 'Castille hybride', 'pure-castile': 'Castille pur' },
 
     batchTitle: 'Paramètres du lot',
@@ -508,7 +677,7 @@ const STRINGS = {
     lyeConc: (p) => `solution de soude à ${p}`,
 
     oilsTitle: 'Pourcentages d’huiles',
-    oilsDesc: 'Choisissez un préréglage ou réglez chaque huile. Le mélange doit totaliser 100\u00a0%.',
+    oilsDesc: 'Choisissez un préréglage, réglez chaque huile ou ajoutez-en d’autres. Le mélange doit totaliser 100 %.',
     presetGroup: 'Préréglages du mélange d’huiles',
     sap: (v) => `Indice SAP ${v} NaOH`,
     pctAria: (name) => `${name}, pourcentage`,
@@ -516,7 +685,13 @@ const STRINGS = {
     totalShort: (p) => `Il manque ${p} pour atteindre 100\u00a0%`,
     totalOver: (p) => `${p} au-dessus de 100\u00a0%`,
     scale: 'Ramener à 100\u00a0%',
-    fillOlive: 'Compléter avec de l’huile d’olive',
+    fillWith: (name) => `Combler l’écart : ${name}`,
+    addOil: 'Ajouter une huile',
+    addOilTitle: 'Choisissez une huile à ajouter',
+    addOilHint: 'Les nouvelles huiles commencent à 0 %. Réglez leur part, puis ramenez le mélange à 100 %.',
+    maxOils: (n) => `Une recette peut contenir jusqu’à ${n} huiles.`,
+    removeOil: (name) => `Retirer : ${name}`,
+    castorHigh: 'Au-delà de 10 %, l’huile de ricin donne souvent un savon mou et collant. La plupart des recettes en utilisent 5 à 8 %.',
 
     additivesTitle: 'Additifs',
     additivesDesc: 'Le surgraissage laisse une partie de l’huile non saponifiée. L’huile essentielle est dosée selon le poids des huiles.',
@@ -573,12 +748,95 @@ const STRINGS = {
     barWarn: (p) => `Total des huiles : ${p}. Ramenez-le à 100\u00a0%.`,
 
     footer:
-      'Les indices SAP sont les grammes d’hydroxyde de sodium par gramme d’huile : olive 0,135, coco (76°) 0,183, ricin 0,128. Vérifiez toute nouvelle recette avec un second calculateur avant votre premier lot.',
+      'Les indices SAP, d’iode, INS et les acides gras proviennent du tableau des huiles de SoapCalc (soapcalc.net). Vérifiez toute nouvelle recette avec un second calculateur avant votre premier lot.',
 
     recipeHeading: 'Recette de savon à froid',
     recipeMeta: (w, sf, ratio) => `${w} d’huiles · surgraissage ${sf} · eau/soude ${ratio}:1`,
     eoLine: (rate) => `Huile essentielle (${rate} g/kg)`,
     totalLine: 'Total pâte à savon',
+
+    undo: 'Annuler',
+    dismiss: 'Fermer',
+    toastReset: 'Recette réinitialisée.',
+    toastPreset: (name) => `Préréglage « ${name} » appliqué.`,
+    toastAdded: (name) => `Ajouté : ${name}.`,
+    toastRemoved: (name) => `Retiré : ${name}.`,
+    toastScaled: 'Huiles ramenées à 100 %.',
+    toastFilled: (name) => `${name} : quantité ajustée pour atteindre 100 %.`,
+    toastSet: (what, value) => `${what} : ${value}.`,
+
+    helpFor: (label) => `Aide : ${label}`,
+    guideLink: 'Plus de détails dans le guide',
+    help: {
+      water: 'Le poids d’eau divisé par le poids de soude. Moins d’eau : trace plus rapide et démoulage plus tôt. Plus d’eau : plus de temps pour travailler, mais des pains mous plus longtemps. 2 : 1 convient à la plupart des recettes.',
+      oils: 'Chaque huile demande une quantité de soude différente pour devenir savon : son indice SAP, en grammes de NaOH par gramme d’huile. Le mélange doit totaliser 100 % pour que les poids correspondent à votre lot.',
+      superfat: 'De l’huile laissée volontairement non saponifiée, comme marge de sécurité et pour un savon plus doux. Environ 5 % pour le corps, 4 à 5 % pour un shampoing solide, 7 à 8 % pour les peaux sèches ou sensibles.',
+      eo: 'Grammes d’huile essentielle par kilogramme d’huiles. 30 g/kg (3 %) est un bon départ ; les huiles puissantes comme la menthe poivrée en demandent moins.',
+      qualities: 'Calculées à partir des acides gras de vos huiles, selon la méthode de SoapCalc. La bande colorée correspond à la plage habituelle. En sortir n’est pas une erreur : cela indique comment le savon se comportera. Un savon riche en olive, par exemple, est mou et très doux, et demande une cure plus longue.',
+    },
+
+    qualities: {
+      title: 'Qualités du savon',
+      desc: 'Calculées à partir des acides gras de vos huiles.',
+      usual: (range) => `habituel ${range}`,
+      status: { low: 'Bas', ok: 'Dans la plage', high: 'Élevé' },
+      acidsShow: 'Afficher le profil d’acides gras',
+      acidsHide: 'Masquer le profil d’acides gras',
+      acids: {
+        lauric: 'Laurique',
+        myristic: 'Myristique',
+        palmitic: 'Palmitique',
+        stearic: 'Stéarique',
+        ricinoleic: 'Ricinoléique',
+        oleic: 'Oléique',
+        linoleic: 'Linoléique',
+        linolenic: 'Linolénique',
+      },
+      items: {
+        hardness: {
+          name: 'Dureté',
+          low: 'Un savon mou : il demande une cure plus longue et s’use plus vite. Normal pour un savon riche en olive.',
+          ok: 'Un pain ferme qui dure bien.',
+          high: 'Un pain très dur, qui peut être cassant et se fendre à la découpe.',
+        },
+        cleansing: {
+          name: 'Pouvoir nettoyant',
+          low: 'Doux : nettoie sans décaper la peau.',
+          ok: 'Nettoie bien sans agresser.',
+          high: 'Décape et peut dessécher. Un surgraissage plus élevé aide.',
+        },
+        conditioning: {
+          name: 'Douceur',
+          low: 'Moins doux : le savon peut dessécher.',
+          ok: 'Laisse la peau douce.',
+          high: 'Très doux. Surtout des huiles liquides : le savon est plus mou et durcit lentement.',
+        },
+        bubbly: {
+          name: 'Mousse abondante',
+          low: 'Peu de grosses bulles ; mousse faible ou dense.',
+          ok: 'Une bonne quantité de mousse légère.',
+          high: 'Beaucoup de grosses bulles rapides.',
+        },
+        creamy: {
+          name: 'Mousse crémeuse',
+          low: 'Une mousse fine qui retombe vite.',
+          ok: 'Une mousse dense et stable.',
+          high: 'Une mousse très dense, comme une lotion.',
+        },
+        iodine: {
+          name: 'Indice d’iode',
+          low: 'Surtout des graisses dures et stables.',
+          ok: 'Ferme, sans tendance particulière au rancissement.',
+          high: 'Beaucoup d’huiles insaturées : un savon plus mou, plus sujet au rancissement (taches orange).',
+        },
+        ins: {
+          name: 'INS',
+          low: 'Un savon plus mou qui demande une cure plus longue.',
+          ok: 'Un pain équilibré et ferme. On cite souvent 160 comme idéal.',
+          high: 'Un pain très dur.',
+        },
+      },
+    },
 
     guide: {
       jump: 'Lire le guide de saponification',
@@ -719,6 +977,10 @@ const STRINGS = {
           total: { name: 'Total de la pâte', formula: 'huiles + soude NaOH + eau + huile essentielle' },
           conc: { name: 'Concentration de la soude', formula: 'soude NaOH ÷ (soude NaOH + eau)' },
         },
+        qualitiesTitle: 'Qualités du savon',
+        qualitiesBody:
+          'Méthode de SoapCalc : chaque qualité additionne certains acides gras, en pourcentage du mélange. L’indice d’iode et l’INS font la moyenne des valeurs de chaque huile, pondérée par sa part.',
+        weighted: { iodine: 'somme de (part de l’huile × son indice d’iode)', ins: 'somme de (part de l’huile × son INS)' },
         rounding: 'Chaque étape utilise les valeurs non arrondies : un résultat peut différer de la somme de ses parties arrondies de 0,01 g.',
       },
     },
@@ -734,7 +996,25 @@ const STRINGS = {
     units: { g: 'غ', oz: 'أونصة', lb: 'رطل' },
     unitGroup: 'وحدة وزن الدفعة',
     gPerKg: 'غ/كغ',
-    oils: { olive: 'زيت الزيتون', coconut: 'زيت جوز الهند (76°)', castor: 'زيت الخروع' },
+    oils: {
+      olive: 'زيت الزيتون',
+      coconut: 'زيت جوز الهند (76°)',
+      castor: 'زيت الخروع',
+      shea: 'زبدة الشيا',
+      cocoa: 'زبدة الكاكاو',
+      mango: 'زبدة المانجو',
+      palm: 'زيت النخيل',
+      palmKernel: 'زيت نواة النخيل',
+      babassu: 'زيت الباباسو',
+      almond: 'زيت اللوز الحلو',
+      avocado: 'زيت الأفوكادو',
+      sunflower: 'زيت دوار الشمس',
+      sunflowerHO: 'زيت دوار الشمس عالي الأوليك',
+      riceBran: 'زيت نخالة الأرز',
+      hemp: 'زيت بذور القنب',
+      lard: 'شحم الخنزير',
+      tallow: 'شحم البقر',
+    },
     presets: { classic: 'كلاسيكي', 'high-olive': 'غني بالزيتون', castile: 'قشتالي هجين', 'pure-castile': 'قشتالي خالص' },
 
     batchTitle: 'إعدادات الدفعة',
@@ -745,7 +1025,7 @@ const STRINGS = {
     lyeConc: (p) => `تركيز محلول الصودا ${p}`,
 
     oilsTitle: 'نسب الزيوت',
-    oilsDesc: 'اختر وصفة جاهزة أو حدّد نسبة كل زيت. يجب أن يبلغ مجموع المزيج 100%.',
+    oilsDesc: 'اختر وصفة جاهزة أو حدّد نسبة كل زيت أو أضف زيوتًا أخرى. يجب أن يبلغ مجموع المزيج 100%.',
     presetGroup: 'وصفات جاهزة لمزيج الزيوت',
     sap: (v) => `قيمة التصبّن ${v}`,
     pctAria: (name) => `نسبة ${name}`,
@@ -753,7 +1033,13 @@ const STRINGS = {
     totalShort: (p) => `ينقص ${p} عن 100%`,
     totalOver: (p) => `يزيد ${p} عن 100%`,
     scale: 'ضبط النسب إلى 100%',
-    fillOlive: 'إكمال الفرق بزيت الزيتون',
+    fillWith: (name) => `إكمال الفرق: ${name}`,
+    addOil: 'إضافة زيت',
+    addOilTitle: 'اختر زيتًا لإضافته',
+    addOilHint: 'تبدأ الزيوت الجديدة من 0%. حدّد نسبتها، ثم أعد المزيج إلى 100%.',
+    maxOils: (n) => `يمكن أن تحتوي الوصفة على ${n} زيوت كحد أقصى.`,
+    removeOil: (name) => `إزالة ${name}`,
+    castorHigh: 'فوق 10% يميل زيت الخروع إلى جعل الصابون طريًا ولزجًا. تستخدم معظم الوصفات بين 5 و8%.',
 
     additivesTitle: 'الإضافات',
     additivesDesc: 'الدهون الزائدة تُبقي جزءًا من الزيت دون تصبّن، ويُحسب الزيت العطري بالنسبة إلى وزن الزيوت.',
@@ -810,12 +1096,95 @@ const STRINGS = {
     barWarn: (p) => `مجموع الزيوت ${p}. اضبطه على 100%.`,
 
     footer:
-      'قيم التصبّن هي غرامات هيدروكسيد الصوديوم اللازمة لكل غرام من الزيت: الزيتون 0.135، وجوز الهند (76°) 0.183، والخروع 0.128. راجع أي وصفة جديدة بحاسبة أخرى قبل أول دفعة.',
+      'قيم التصبّن والرقم اليودي وINS والأحماض الدهنية مأخوذة من جدول الزيوت في SoapCalc (soapcalc.net). راجع أي وصفة جديدة بحاسبة أخرى قبل أول دفعة.',
 
     recipeHeading: 'وصفة صابون على البارد',
     recipeMeta: (w, sf, ratio) => `${w} زيوت · ${sf} دهون زائدة · ماء إلى صودا ${ratio}:1`,
     eoLine: (rate) => `زيت عطري (${rate} غ/كغ)`,
     totalLine: 'إجمالي الخلطة الرطبة',
+
+    undo: 'تراجع',
+    dismiss: 'إغلاق',
+    toastReset: 'تمت إعادة الوصفة إلى القيم الافتراضية.',
+    toastPreset: (name) => `تم تطبيق الوصفة الجاهزة: ${name}.`,
+    toastAdded: (name) => `تمت إضافة ${name}.`,
+    toastRemoved: (name) => `تمت إزالة ${name}.`,
+    toastScaled: 'تم ضبط نسب الزيوت على 100%.',
+    toastFilled: (name) => `تم تعديل ${name} ليصل المزيج إلى 100%.`,
+    toastSet: (what, value) => `تم ضبط ${what} على ${value}.`,
+
+    helpFor: (label) => `مساعدة: ${label}`,
+    guideLink: 'المزيد في الدليل',
+    help: {
+      water: 'وزن الماء مقسومًا على وزن الصودا. الماء الأقل يعني وصولًا أسرع إلى مرحلة الأثر وإخراجًا أبكر من القالب، والماء الأكثر يمنحك وقتًا أطول للعمل لكن القطع تبقى طرية لفترة أطول. نسبة 2 : 1 تناسب معظم الوصفات.',
+      oils: 'يحتاج كل زيت إلى كمية مختلفة من الصودا ليتحول إلى صابون، وهي قيمة التصبّن: غرامات NaOH لكل غرام من الزيت. يجب أن يبلغ مجموع المزيج 100% لتطابق الأوزان دفعتك.',
+      superfat: 'زيت يُترك دون تصبّن عمدًا، كهامش أمان ولصابون ألطف. نحو 5% لصابون الجسم، و4–5% لقوالب الشامبو، و7–8% للبشرة الجافة أو الحساسة.',
+      eo: 'غرامات الزيت العطري لكل كيلوغرام من الزيوت. 30 غ/كغ (3%) بداية شائعة، والزيوت القوية مثل النعناع الفلفلي تحتاج كمية أقل.',
+      qualities: 'تُحسب من الأحماض الدهنية في زيوتك بطريقة SoapCalc. الشريط الملوّن هو النطاق المعتاد. الخروج عنه ليس خطأً، بل يخبرك كيف سيتصرف الصابون. فالصابون الغني بزيت الزيتون مثلًا طري وشديد الترطيب، ويحتاج إلى فترة تجفيف أطول.',
+    },
+
+    qualities: {
+      title: 'خصائص الصابون',
+      desc: 'محسوبة من الأحماض الدهنية في زيوتك.',
+      usual: (range) => `المعتاد ${range}`,
+      status: { low: 'منخفض', ok: 'ضمن النطاق', high: 'مرتفع' },
+      acidsShow: 'إظهار تركيبة الأحماض الدهنية',
+      acidsHide: 'إخفاء تركيبة الأحماض الدهنية',
+      acids: {
+        lauric: 'لوريك',
+        myristic: 'ميريستيك',
+        palmitic: 'بالميتيك',
+        stearic: 'ستياريك',
+        ricinoleic: 'ريسينوليك',
+        oleic: 'أوليك',
+        linoleic: 'لينوليك',
+        linolenic: 'لينولينيك',
+      },
+      items: {
+        hardness: {
+          name: 'الصلابة',
+          low: 'صابون طري يحتاج إلى فترة تجفيف أطول ويذوب أسرع. هذا طبيعي في الصابون الغني بزيت الزيتون.',
+          ok: 'قطعة متماسكة تدوم جيدًا.',
+          high: 'قطعة شديدة الصلابة قد تكون هشة وتتشقق عند التقطيع.',
+        },
+        cleansing: {
+          name: 'قوة التنظيف',
+          low: 'لطيف: ينظف برفق دون أن يجرّد البشرة من زيوتها.',
+          ok: 'ينظف جيدًا دون قسوة.',
+          high: 'يزيل الزيوت بقوة وقد يجفّف البشرة. رفع نسبة الدهون الزائدة يساعد.',
+        },
+        conditioning: {
+          name: 'الترطيب',
+          low: 'ترطيب أقل، لذا قد يجفّف البشرة.',
+          ok: 'يترك البشرة ناعمة.',
+          high: 'ترطيب عالٍ جدًا. معظم الزيوت سائلة، لذا يكون الصابون أطرى وأبطأ في التصلب.',
+        },
+        bubbly: {
+          name: 'الرغوة الفقاعية',
+          low: 'فقاعات كبيرة قليلة، والرغوة ضعيفة أو كثيفة.',
+          ok: 'كمية جيدة من الرغوة الخفيفة.',
+          high: 'فقاعات كبيرة كثيرة وسريعة.',
+        },
+        creamy: {
+          name: 'الرغوة الكريمية',
+          low: 'رغوة رقيقة تختفي بسرعة.',
+          ok: 'رغوة كثيفة وثابتة.',
+          high: 'رغوة كثيفة جدًا تشبه اللوشن.',
+        },
+        iodine: {
+          name: 'الرقم اليودي',
+          low: 'معظمها دهون صلبة ومستقرة.',
+          ok: 'صابون متماسك ولا يميل كثيرًا إلى التزنّخ.',
+          high: 'زيوت غير مشبعة كثيرة: صابون أطرى وأكثر عرضة للتزنّخ (بقع برتقالية).',
+        },
+        ins: {
+          name: 'INS',
+          low: 'صابون أطرى يحتاج إلى فترة تجفيف أطول.',
+          ok: 'قطعة متوازنة ومتماسكة، ويُذكر 160 غالبًا كقيمة مثالية.',
+          high: 'قطعة شديدة الصلابة.',
+        },
+      },
+    },
 
     guide: {
       jump: 'اقرأ دليل صناعة الصابون',
@@ -956,6 +1325,10 @@ const STRINGS = {
           total: { name: 'إجمالي الخلطة الرطبة', formula: 'الزيوت + الصودا + الماء + الزيت العطري' },
           conc: { name: 'تركيز محلول الصودا', formula: 'الصودا ÷ (الصودا + الماء)' },
         },
+        qualitiesTitle: 'خصائص الصابون',
+        qualitiesBody:
+          'طريقة SoapCalc: كل خاصية تجمع أحماضًا دهنية معينة كنسبة مئوية من المزيج كله. أما الرقم اليودي وINS فهما متوسط قيمة كل زيت مرجّحًا بحصته.',
+        weighted: { iodine: 'مجموع (حصة الزيت × رقمه اليودي)', ins: 'مجموع (حصة الزيت × قيمة INS الخاصة به)' },
         rounding: 'تستخدم كل خطوة القيم غير المقرّبة، لذا قد يختلف الناتج عن مجموع أجزائه المقرّبة بمقدار 0.01 غ.',
       },
     },
@@ -968,10 +1341,11 @@ const sum = (values) => values.reduce((a, b) => a + b, 0);
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 const round1 = (v) => Math.round(v * 10) / 10;
 
-function calculateRecipe({ oilGrams, pct, superfat, waterRatio, eoRate }) {
-  const oils = OILS.map((oil) => {
-    const grams = oilGrams * (pct[oil.key] / 100);
-    return { ...oil, pct: pct[oil.key], grams, lye: grams * oil.sap };
+function calculateRecipe({ oilGrams, blend, superfat, waterRatio, eoRate }) {
+  const oils = blend.map(({ key, pct }) => {
+    const oil = OIL_BY_KEY[key];
+    const grams = oilGrams * (pct / 100);
+    return { ...oil, pct, grams, lye: grams * oil.sap };
   });
   const pctTotal = sum(oils.map((o) => o.pct));
   const oilTotal = sum(oils.map((o) => o.grams));
@@ -990,20 +1364,66 @@ function calculateRecipe({ oilGrams, pct, superfat, waterRatio, eoRate }) {
     total: oilTotal + lye + water + eo,
     lyeConcentration: lye + water > 0 ? (lye / (lye + water)) * 100 : 0,
     balanced: Math.abs(pctTotal - 100) < 0.001,
+    ...barQualities(oils, pctTotal),
   };
 }
 
+// Bar qualities for the blend's proportions, so they stay meaningful while the oils don't total 100%.
+function barQualities(oils, pctTotal) {
+  const shares = oils.map((oil) => ({ oil, share: pctTotal > 0 ? oil.pct / pctTotal : 0 }));
+  const acids = Object.fromEntries(
+    FATTY_ACIDS.map((a) => [a, sum(shares.map(({ oil, share }) => share * oil.fa[a]))])
+  );
+  const qualities = Object.fromEntries(
+    QUALITIES.map((q) => [
+      q.key,
+      q.acids ? sum(q.acids.map((a) => acids[a])) : sum(shares.map(({ oil, share }) => share * oil[q.key])),
+    ])
+  );
+  return { shares, acids, qualities };
+}
+
 // Scale the blend proportionally to 100%, pushing any rounding drift onto the largest oil.
-function normalizeBlend(pct) {
-  const total = sum(OILS.map((o) => pct[o.key]));
-  if (total <= 0) return { ...DEFAULTS.pct };
-  const next = Object.fromEntries(OILS.map((o) => [o.key, round1((pct[o.key] / total) * 100)]));
-  const drift = round1(100 - sum(Object.values(next)));
+function normalizeBlend(blend) {
+  const total = sum(blend.map((b) => b.pct));
+  if (total <= 0) return blend;
+  const next = blend.map((b) => ({ ...b, pct: round1((b.pct / total) * 100) }));
+  const drift = round1(100 - sum(next.map((b) => b.pct)));
   if (drift !== 0) {
-    const largest = OILS.reduce((a, o) => (next[o.key] > next[a.key] ? o : a), OILS[0]);
-    next[largest.key] = round1(next[largest.key] + drift);
+    const largest = next.reduce((a, b) => (b.pct > a.pct ? b : a));
+    largest.pct = round1(largest.pct + drift);
   }
   return next;
+}
+
+// The oil that "Fill the gap" adjusts: olive when it's in the blend, otherwise the largest oil.
+function fillOilKey(blend) {
+  if (blend.some((b) => b.key === 'olive')) return 'olive';
+  return blend.reduce((a, b) => (b.pct > a.pct ? b : a)).key;
+}
+
+function fillGap(blend, key) {
+  const others = sum(blend.filter((b) => b.key !== key).map((b) => b.pct));
+  return blend.map((b) => (b.key === key ? { ...b, pct: round1(Math.max(0, 100 - others)) } : b));
+}
+
+const presetBlend = (preset) => Object.entries(preset.pct).map(([key, pct]) => ({ key, pct }));
+
+// A preset is active when every oil matches it; oils missing on either side count as 0%.
+function matchesPreset(blend, preset) {
+  const pcts = Object.fromEntries(blend.map((b) => [b.key, b.pct]));
+  const keys = new Set([...Object.keys(pcts), ...Object.keys(preset.pct)]);
+  return [...keys].every((k) => Math.abs((pcts[k] ?? 0) - (preset.pct[k] ?? 0)) < 0.001);
+}
+
+// Keeps known oils only, once each, with a valid share.
+function sanitizeBlend(list) {
+  const blend = [];
+  for (const b of Array.isArray(list) ? list : []) {
+    if (!b || !OIL_BY_KEY[b.key] || blend.some((x) => x.key === b.key) || blend.length >= MAX_OILS) continue;
+    blend.push({ key: b.key, pct: Number.isFinite(b.pct) ? clamp(b.pct, LIMITS.pct.min, LIMITS.pct.max) : 0 });
+  }
+  return blend.length ? blend : DEFAULTS.blend;
 }
 
 function loadState() {
@@ -1018,9 +1438,8 @@ function loadState() {
       waterRatio: num(saved.waterRatio, LIMITS.waterRatio, DEFAULTS.waterRatio),
       superfat: num(saved.superfat, LIMITS.superfat, DEFAULTS.superfat),
       eoRate: num(saved.eoRate, LIMITS.eoRate, DEFAULTS.eoRate),
-      pct: Object.fromEntries(
-        OILS.map((o) => [o.key, num(saved.pct?.[o.key], LIMITS.pct, DEFAULTS.pct[o.key])])
-      ),
+      // Saves from before oils could be added stored { pct: { olive: 80, … } }.
+      blend: sanitizeBlend(saved.blend ?? Object.entries(saved.pct ?? {}).map(([key, pct]) => ({ key, pct }))),
     };
   } catch {
     return DEFAULTS;
@@ -1164,6 +1583,64 @@ const WarnIcon = (p) => <Icon {...p} d={<><path d="M8 2.2l6.3 11.3H1.7z" /><path
 const CopyIcon = (p) => <Icon {...p} d={<><rect x="5.5" y="5.5" width="8" height="8" rx="1.5" /><path d="M10.5 3.5v-.5a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h.5" /></>} />;
 const ResetIcon = (p) => <Icon {...p} d={<><path d="M2.8 8a5.2 5.2 0 1 0 1.6-3.8" /><path d="M2.6 2.4v3h3" /></>} />;
 const DownIcon = (p) => <Icon {...p} d={<path d="M8 3v10M3.5 8.5L8 13l4.5-4.5" />} />;
+const PlusIcon = (p) => <Icon {...p} d={<path d="M8 3.5v9M3.5 8h9" />} />;
+const CloseIcon = (p) => <Icon {...p} d={<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" />} />;
+
+// ---- In-place help ----------------------------------------------------------
+
+// A "?" button next to a label that opens a short explanation right below it,
+// with a link to the matching part of the guide.
+function useHelp() {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return { open, id, toggle: () => setOpen((o) => !o) };
+}
+
+function HelpToggle({ help, label }) {
+  const { t } = useLocale();
+  return (
+    <button
+      type="button"
+      onClick={help.toggle}
+      aria-expanded={help.open}
+      aria-controls={help.id}
+      aria-label={t.helpFor(label)}
+      title={t.helpFor(label)}
+      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold leading-none transition-colors ${
+        help.open ? 'border-accent bg-accent-soft text-ink' : 'border-line text-muted hover:border-accent hover:text-ink'
+      }`}
+    >
+      ?
+    </button>
+  );
+}
+
+function HelpPanel({ help, guide, children }) {
+  const { t } = useLocale();
+  return (
+    <div id={help.id} hidden={!help.open} className="rounded-md bg-well px-3.5 py-3 text-sm leading-relaxed text-ink-2">
+      <p>{children}</p>
+      {guide && (
+        <button
+          type="button"
+          onClick={() => scrollToId(guide)}
+          className="mt-1.5 inline-flex items-center gap-1 text-sm font-medium text-accent underline-offset-4 hover:underline"
+        >
+          <DownIcon className="h-3.5 w-3.5" /> {t.guideLink}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Notice({ children }) {
+  return (
+    <p className="flex items-start gap-2 rounded-md border border-warn-line bg-warn-soft px-3 py-2 text-xs text-warn">
+      <WarnIcon className="mt-px h-3.5 w-3.5 shrink-0" />
+      {children}
+    </p>
+  );
+}
 
 // ---- Inputs -----------------------------------------------------------------
 
@@ -1230,15 +1707,21 @@ function Range({ id, value, min, max, step, onChange, fill, label, valueText }) 
   );
 }
 
-function Control({ htmlFor, label, input, slider, footer }) {
+// `help` is { label, text, guide } for the "?" explanation; `note` shows under the footer.
+function Control({ htmlFor, label, input, slider, footer, help, note }) {
+  const h = useHelp();
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <label htmlFor={htmlFor} className="flex min-w-0 items-center gap-2 text-sm font-medium text-ink">
-          {label}
-        </label>
-        <div className="flex shrink-0 items-center gap-2">{input}</div>
+        <div className="flex min-w-0 items-center gap-2">
+          <label htmlFor={htmlFor} className="flex min-w-0 items-center gap-2 text-sm font-medium text-ink">
+            {label}
+          </label>
+          {help && <HelpToggle help={h} label={help.label} />}
+        </div>
+        <div className="flex shrink-0 items-center gap-1">{input}</div>
       </div>
+      {help && <HelpPanel help={h} guide={help.guide}>{help.text}</HelpPanel>}
       {slider}
       {footer && (
         <div className={`grid items-baseline gap-3 text-xs text-muted ${footer.length === 3 ? 'grid-cols-[1fr_auto_1fr]' : 'grid-cols-2'}`}>
@@ -1249,6 +1732,7 @@ function Control({ htmlFor, label, input, slider, footer }) {
           ))}
         </div>
       )}
+      {note}
     </div>
   );
 }
@@ -1305,15 +1789,22 @@ function LanguageToggle({ value, onChange }) {
   );
 }
 
-function Section({ id, title, description, badge, children }) {
+function Section({ id, title, description, badge, help, children }) {
+  const h = useHelp();
   return (
     <section aria-labelledby={id} className="px-5 py-6 sm:px-6">
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 id={id} className="font-display text-lg font-semibold leading-tight text-ink rtl:leading-snug">{title}</h2>
-          {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+      <div className="mb-5 flex flex-col gap-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 id={id} className="font-display text-lg font-semibold leading-tight text-ink rtl:leading-snug">{title}</h2>
+              {help && <HelpToggle help={h} label={title} />}
+            </div>
+            {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+          </div>
+          {badge}
         </div>
-        {badge}
+        {help && <HelpPanel help={h} guide={help.guide}>{help.text}</HelpPanel>}
       </div>
       <div className="flex flex-col gap-6">{children}</div>
     </section>
@@ -1322,43 +1813,46 @@ function Section({ id, title, description, badge, children }) {
 
 // ---- Oil blend pieces -------------------------------------------------------
 
-function MiniBar({ pct, height = 'h-1.5' }) {
+// Proportions only: every oil is named elsewhere, so the segments share the oils colour.
+function MiniBar({ pcts }) {
   return (
-    <span className={`flex w-full gap-[2px] ${height}`} aria-hidden="true">
-      {OILS.filter((o) => pct[o.key] > 0).map((o) => (
-        <span key={o.key} className="block rounded-[1px]" style={{ flexGrow: pct[o.key], flexBasis: 0, background: o.color }} />
+    <span className="flex h-1.5 w-full gap-[2px]" aria-hidden="true">
+      {pcts.filter((p) => p > 0).map((p, i) => (
+        <span key={i} className="block rounded-[1px]" style={{ flexGrow: p, flexBasis: 0, background: COLORS.oils }} />
       ))}
     </span>
   );
 }
 
-function PresetButtons({ pct, onApply }) {
-  const { t } = useLocale();
+function PresetButtons({ blend, onApply }) {
+  const { t, fmtPct } = useLocale();
   return (
     <div role="group" aria-label={t.presetGroup} className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
       {PRESETS.map((p) => {
-        const active = OILS.every((o) => Math.abs(pct[o.key] - p.pct[o.key]) < 0.001);
+        const active = matchesPreset(blend, p);
+        const parts = Object.entries(p.pct);
         return (
           <button
             key={p.id}
             type="button"
             aria-pressed={active}
-            onClick={() => onApply(p.pct)}
+            title={parts.map(([key, pct]) => `${t.oils[key]} ${fmtPct(pct)}`).join(' · ')}
+            onClick={() => onApply(p)}
             className={`flex min-w-0 flex-col items-start gap-1 rounded-lg border px-3 pb-3 pt-2.5 text-start transition-colors ${
               active ? 'border-accent bg-accent-soft' : 'border-line bg-surface hover:bg-well'
             }`}
           >
             {/* Separate items so the order mirrors in Arabic and stays lined up with the mini bar below. */}
             <span className="flex gap-0.5 font-mono text-sm font-medium tabular-nums text-ink">
-              {OILS.map((o, i) => (
-                <React.Fragment key={o.key}>
+              {parts.map(([key, pct], i) => (
+                <React.Fragment key={key}>
                   {i > 0 && <span className="text-muted">/</span>}
-                  <span>{p.pct[o.key]}</span>
+                  <span>{pct}</span>
                 </React.Fragment>
               ))}
             </span>
             <span className="mb-1 truncate text-xs text-ink-2">{t.presets[p.id]}</span>
-            <MiniBar pct={p.pct} />
+            <MiniBar pcts={parts.map(([, pct]) => pct)} />
           </button>
         );
       })}
@@ -1366,12 +1860,73 @@ function PresetButtons({ pct, onApply }) {
   );
 }
 
-function BlendStatus({ pct, total, onScale, onBalance }) {
+function OilPicker({ blend, onAdd }) {
+  const { t, lang, fmtN, fmtFixed } = useLocale();
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+  const full = blend.length >= MAX_OILS;
+  const options = useMemo(() => {
+    const collator = new Intl.Collator(lang);
+    return OIL_LIBRARY.filter((o) => !blend.some((b) => b.key === o.key)).sort((a, b) =>
+      collator.compare(t.oils[a.key], t.oils[b.key])
+    );
+  }, [blend, lang, t]);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={full || !options.length}
+        aria-expanded={open && !full}
+        aria-controls={panelId}
+        className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-line px-3 py-2.5 text-sm font-medium text-ink transition-colors hover:border-accent hover:bg-well disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <PlusIcon /> {t.addOil}
+      </button>
+      {full && <p className="text-xs text-muted">{t.maxOils(MAX_OILS)}</p>}
+      <div
+        id={panelId}
+        hidden={!open || full}
+        onKeyDown={(e) => { if (e.key === 'Escape') setOpen(false); }}
+        className="rounded-lg border border-line bg-well p-3"
+      >
+        <p className="text-sm font-medium text-ink">{t.addOilTitle}</p>
+        <p className="mt-0.5 text-xs text-muted">{t.addOilHint}</p>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+          {options.map((oil) => {
+            const { qualities } = barQualities([{ ...oil, pct: 100 }], 100);
+            return (
+              <li key={oil.key}>
+                <button
+                  type="button"
+                  onClick={() => { onAdd(oil.key); setOpen(false); }}
+                  className="flex h-full w-full flex-col items-start gap-1 rounded-md border border-line bg-surface px-3 py-2 text-start transition-colors hover:border-accent"
+                >
+                  <span className="text-sm font-medium text-ink">{t.oils[oil.key]}</span>
+                  <span className="text-xs text-muted">{t.sap(fmtFixed(oil.sap, 3))}</span>
+                  <span className="text-xs text-ink-2">
+                    {['hardness', 'cleansing', 'conditioning']
+                      .map((k) => `${t.qualities.items[k].name} ${fmtN(Math.round(qualities[k]))}`)
+                      .join(' · ')}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function BlendStatus({ blend, total, onScale, onFill }) {
   const { t, fmtPct } = useLocale();
   const balanced = Math.abs(total - 100) < 0.001;
   const diff = total - 100;
   const scaleMax = Math.max(100, total);
-  const canBalance = pct.coconut + pct.castor <= 100;
+  const fillKey = fillOilKey(blend);
+  const canFill = sum(blend.filter((b) => b.key !== fillKey).map((b) => b.pct)) <= 100;
   return (
     <div className={`rounded-lg border px-4 py-3 ${balanced ? 'border-line bg-well' : 'border-warn-line bg-warn-soft'}`}>
       <div className="flex items-center justify-between gap-3 text-sm">
@@ -1383,8 +1938,8 @@ function BlendStatus({ pct, total, onScale, onBalance }) {
       </div>
       <div className="relative mt-2.5 h-2 overflow-hidden rounded-full bg-track" aria-hidden="true">
         <div className="flex h-full gap-[2px]" style={{ width: `${(total / scaleMax) * 100}%` }}>
-          {OILS.filter((o) => pct[o.key] > 0).map((o) => (
-            <span key={o.key} className="block h-full" style={{ flexGrow: pct[o.key], flexBasis: 0, background: o.color }} />
+          {blend.filter((b) => b.pct > 0).map((b) => (
+            <span key={b.key} className="block h-full" style={{ flexGrow: b.pct, flexBasis: 0, background: COLORS.oils }} />
           ))}
         </div>
         {total > 100 && (
@@ -1403,11 +1958,11 @@ function BlendStatus({ pct, total, onScale, onBalance }) {
           </button>
           <button
             type="button"
-            onClick={onBalance}
-            disabled={!canBalance}
+            onClick={() => onFill(fillKey)}
+            disabled={!canFill}
             className="rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-well disabled:opacity-40"
           >
-            {t.fillOlive}
+            {t.fillWith(t.oils[fillKey])}
           </button>
         </div>
       )}
@@ -1417,15 +1972,11 @@ function BlendStatus({ pct, total, onScale, onBalance }) {
 
 // ---- Chart ------------------------------------------------------------------
 
-function Swatch({ colors }) {
-  return (
-    <span className="flex h-2.5 w-2.5 shrink-0 gap-px overflow-hidden rounded-[2px]" aria-hidden="true">
-      {colors.map((c, i) => <span key={i} className="block h-full flex-1" style={{ background: c }} />)}
-    </span>
-  );
+function Swatch({ color }) {
+  return <span className="h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ background: color }} aria-hidden="true" />;
 }
 
-// Scale under each bar. Logical positions, so 0% sits at the start edge in either direction.
+// Scale under a bar. Logical positions, so 0% sits at the start edge in either direction.
 function Ticks() {
   const { fmtPct } = useLocale();
   return (
@@ -1440,7 +1991,47 @@ function Ticks() {
   );
 }
 
-function StackedBar({ title, note, segments, groups = {}, legend, shareLabel, hoverKey, onHover }) {
+// One labelled bar per oil on a shared 0–100% scale. The oils are named, so they share one colour.
+function OilBars({ oils, pctTotal, hoverKey, onHover }) {
+  const { t, fmtPct } = useLocale();
+  const row = 'grid grid-cols-[minmax(0,8.5rem)_minmax(0,1fr)_3.75rem] items-center gap-3';
+  return (
+    <figure className="m-0">
+      <figcaption className="flex items-baseline justify-between gap-3">
+        <span className="text-sm font-medium text-ink">{t.blendTitle}</span>
+        <span className="text-xs text-muted">{t.blendNote}</span>
+      </figcaption>
+      <ul className="mt-2" onMouseLeave={() => onHover(null)}>
+        {oils.map((o) => {
+          const share = pctTotal > 0 ? (o.pct / pctTotal) * 100 : 0;
+          return (
+            <li
+              key={o.key}
+              onMouseEnter={() => onHover(o.key)}
+              className={`${row} rounded px-1 py-1.5 transition-colors ${hoverKey === o.key ? 'bg-well' : ''}`}
+            >
+              <span className="truncate text-xs text-ink-2">{t.oils[o.key]}</span>
+              <span className="h-2.5 rounded-full bg-track">
+                <span
+                  className="block h-full rounded-e-[4px] transition-[width] duration-300 ease-out"
+                  style={{ width: `${share}%`, background: COLORS.oils }}
+                />
+              </span>
+              <span className="text-end font-mono text-xs tabular-nums text-ink">{fmtPct(share)}</span>
+            </li>
+          );
+        })}
+      </ul>
+      <div className={`${row} mt-1 px-1`}>
+        <span />
+        <Ticks />
+        <span />
+      </div>
+    </figure>
+  );
+}
+
+function StackedBar({ title, note, segments, shareLabel, hoverKey, onHover }) {
   const { rtl, fmtW, fmtPct, t } = useLocale();
   const shown = segments.filter((s) => s.value > 0);
   const total = sum(shown.map((s) => s.value));
@@ -1451,28 +2042,16 @@ function StackedBar({ title, note, segments, groups = {}, legend, shareLabel, ho
     return { ...s, start, share: total ? s.value / total : 0 };
   });
 
-  const isHit = (s) => hoverKey != null && (s.key === hoverKey || s.group === hoverKey);
-  const hits = placed.filter(isHit);
-  let tip = null;
-  if (hits.length) {
-    const first = hits[0];
-    const last = hits[hits.length - 1];
-    const value = sum(hits.map((s) => s.value));
-    tip = {
-      label: hits.length > 1 ? groups[hoverKey] : first.label,
-      value,
-      share: value / total,
-      center: ((first.start + last.start + last.share) / 2) * 100,
-    };
-  }
+  const hit = placed.find((s) => s.key === hoverKey);
+  const center = hit ? (hit.start + hit.share / 2) * 100 : 0;
   // Segments run from the start edge (right in Arabic), so the tooltip anchors to that edge too.
-  const tipStyle = !tip
+  const tipStyle = !hit
     ? null
-    : tip.center < 18
+    : center < 18
       ? { insetInlineStart: 0 }
-      : tip.center > 82
+      : center > 82
         ? { insetInlineEnd: 0 }
-        : { insetInlineStart: `${tip.center}%`, transform: `translateX(${rtl ? 50 : -50}%)` };
+        : { insetInlineStart: `${center}%`, transform: `translateX(${rtl ? 50 : -50}%)` };
 
   return (
     <figure className="m-0">
@@ -1481,13 +2060,13 @@ function StackedBar({ title, note, segments, groups = {}, legend, shareLabel, ho
         <span className="text-xs text-muted">{note}</span>
       </figcaption>
       <div className="relative">
-        {tip && (
+        {hit && (
           <div
             className="pointer-events-none absolute bottom-full z-10 whitespace-nowrap rounded-md border border-line bg-surface px-2.5 py-1.5 shadow-lg"
             style={tipStyle}
           >
-            <div className="font-mono text-sm font-semibold tabular-nums text-ink">{fmtW(tip.value)}</div>
-            <div className="text-xs text-ink-2">{tip.label} · {fmtPct(tip.share * 100)} {shareLabel}</div>
+            <div className="font-mono text-sm font-semibold tabular-nums text-ink">{fmtW(hit.value)}</div>
+            <div className="text-xs text-ink-2">{hit.label} · {fmtPct(hit.share * 100)} {shareLabel}</div>
           </div>
         )}
         <div className="flex gap-[2px]" onMouseLeave={() => onHover(null)}>
@@ -1505,7 +2084,7 @@ function StackedBar({ title, note, segments, groups = {}, legend, shareLabel, ho
             >
               <span
                 className={`block h-6 transition-opacity duration-150 ${i === placed.length - 1 ? 'rounded-e-[4px]' : ''} ${
-                  hits.length && !isHit(s) ? 'opacity-30' : ''
+                  hit && hit.key !== s.key ? 'opacity-30' : ''
                 }`}
                 style={{ background: s.color }}
               />
@@ -1515,16 +2094,16 @@ function StackedBar({ title, note, segments, groups = {}, legend, shareLabel, ho
         <Ticks />
       </div>
       <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5">
-        {legend.map((item) => (
+        {shown.map((s) => (
           <li
-            key={item.key}
+            key={s.key}
             className="flex items-center gap-1.5 text-xs"
-            onMouseEnter={() => onHover(item.key)}
+            onMouseEnter={() => onHover(s.key)}
             onMouseLeave={() => onHover(null)}
           >
-            <Swatch colors={item.colors} />
-            <span className="text-ink-2">{item.label}</span>
-            <span className="font-mono tabular-nums text-ink">{fmtPct(total ? (item.value / total) * 100 : 0)}</span>
+            <Swatch color={s.color} />
+            <span className="text-ink-2">{s.label}</span>
+            <span className="font-mono tabular-nums text-ink">{fmtPct(total ? (s.value / total) * 100 : 0)}</span>
           </li>
         ))}
       </ul>
@@ -1641,7 +2220,6 @@ function RecipeCard({ r, state, hoverKey, onHover, cardRef }) {
               <ItemRow
                 key={o.key}
                 id={o.key}
-                color={o.color}
                 name={t.oils[o.key]}
                 detail={t.oilDetail(fmtFixed(o.sap, 3), fmtW(o.lye))}
                 pct={fmtPct(o.pct)}
@@ -1651,7 +2229,16 @@ function RecipeCard({ r, state, hoverKey, onHover, cardRef }) {
                 onHover={onHover}
               />
             ))}
-            <ItemRow id="oils" name={t.allOils} pct={fmtPct(r.pctTotal)} grams={r.oilTotal} unit={unit} hoverKey={hoverKey} onHover={onHover} />
+            <ItemRow
+              id="oils"
+              color={COLORS.oils}
+              name={t.allOils}
+              pct={fmtPct(r.pctTotal)}
+              grams={r.oilTotal}
+              unit={unit}
+              hoverKey={hoverKey}
+              onHover={onHover}
+            />
 
             <GroupRow label={t.groupLye} />
             <ItemRow
@@ -1721,9 +2308,8 @@ function RecipeCard({ r, state, hoverKey, onHover, cardRef }) {
 
 function BreakdownCard({ r, hoverKey, onHover }) {
   const { t } = useLocale();
-  const blend = r.oils.map((o) => ({ key: o.key, label: t.oils[o.key], value: o.grams, color: o.color }));
   const batch = [
-    ...r.oils.map((o) => ({ key: o.key, group: 'oils', label: t.oils[o.key], value: o.grams, color: o.color })),
+    { key: 'oils', label: t.legendOils, value: r.oilTotal, color: COLORS.oils },
     { key: 'water', label: t.water, value: r.water, color: COLORS.water },
     { key: 'lye', label: t.lye, value: r.lye, color: COLORS.lye },
     { key: 'eo', label: t.eo, value: r.eo, color: COLORS.eo },
@@ -1733,32 +2319,134 @@ function BreakdownCard({ r, hoverKey, onHover }) {
       <h2 id="breakdown-title" className="font-display text-lg font-semibold leading-tight text-ink rtl:leading-snug">{t.breakdownTitle}</h2>
       <p className="mt-1 text-sm text-muted">{t.breakdownDesc}</p>
       <div className="mt-6 flex flex-col gap-8">
-        <StackedBar
-          title={t.blendTitle}
-          note={t.blendNote}
-          shareLabel={t.ofOils}
-          segments={blend}
-          legend={r.oils.map((o) => ({ key: o.key, label: t.oils[o.key], value: o.grams, colors: [o.color] }))}
-          hoverKey={hoverKey}
-          onHover={onHover}
-        />
+        <OilBars oils={r.oils} pctTotal={r.pctTotal} hoverKey={hoverKey} onHover={onHover} />
         <StackedBar
           title={t.wetTitle}
           note={t.wetNote}
           shareLabel={t.ofBatch}
           segments={batch}
-          groups={{ oils: t.allOils }}
-          legend={[
-            { key: 'oils', label: t.legendOils, value: r.oilTotal, colors: r.oils.filter((o) => o.grams > 0).map((o) => o.color) },
-            { key: 'water', label: t.water, value: r.water, colors: [COLORS.water] },
-            { key: 'lye', label: t.lye, value: r.lye, colors: [COLORS.lye] },
-            { key: 'eo', label: t.eo, value: r.eo, colors: [COLORS.eo] },
-          ]}
           hoverKey={hoverKey}
           onHover={onHover}
         />
       </div>
     </section>
+  );
+}
+
+// One quality: its value against the usual range, drawn as a band on a fixed scale.
+function QualityRow({ quality, value }) {
+  const { t, fmtN } = useLocale();
+  const q = t.qualities;
+  const item = q.items[quality.key];
+  const shown = Math.round(value);
+  const status = shown < quality.min ? 'low' : shown > quality.max ? 'high' : 'ok';
+  const at = (v) => (clamp(v, 0, quality.scale) / quality.scale) * 100;
+  const usual = q.usual(`${fmtN(quality.min)}–${fmtN(quality.max)}`);
+  return (
+    <li className="flex flex-col gap-1.5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <span className="text-sm font-medium text-ink">{item.name}</span>
+          <span className="text-xs text-muted">{usual}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center gap-1 text-xs font-medium ${status === 'ok' ? 'text-ok' : 'text-warn'}`}>
+            {status === 'ok' ? <CheckIcon className="h-3.5 w-3.5" /> : <WarnIcon className="h-3.5 w-3.5" />}
+            {q.status[status]}
+          </span>
+          <span className="min-w-[2.5rem] text-end font-mono text-sm font-semibold tabular-nums text-ink">{fmtN(shown)}</span>
+        </div>
+      </div>
+      <div className="relative my-1 h-2 rounded-full bg-track" role="img" aria-label={`${item.name}: ${fmtN(shown)}, ${usual}, ${q.status[status]}`}>
+        <span
+          className="absolute inset-y-0 rounded-full bg-band"
+          style={{ insetInlineStart: `${at(quality.min)}%`, width: `${at(quality.max) - at(quality.min)}%` }}
+        />
+        <span
+          className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border-2 border-surface bg-ink transition-[inset-inline-start] duration-300 ease-out"
+          style={{ insetInlineStart: `calc(${at(value)}% - 7px)` }}
+        />
+      </div>
+      <p className="text-xs text-ink-2">{item[status]}</p>
+    </li>
+  );
+}
+
+function QualitiesCard({ r }) {
+  const { t, fmtPct } = useLocale();
+  const q = t.qualities;
+  const help = useHelp();
+  const [showAcids, setShowAcids] = useState(false);
+  return (
+    <section aria-labelledby="qualities-title" className={`rounded-xl border border-line bg-surface px-5 py-5 transition-opacity sm:px-6 sm:py-6 ${r.balanced ? '' : 'opacity-60'}`}>
+      <div className="flex items-center gap-2">
+        <h2 id="qualities-title" className="font-display text-lg font-semibold leading-tight text-ink rtl:leading-snug">{q.title}</h2>
+        <HelpToggle help={help} label={q.title} />
+      </div>
+      <p className="mt-1 text-sm text-muted">{q.desc}</p>
+      <div className={help.open ? 'mt-3' : ''}>
+        <HelpPanel help={help} guide="guide-qualities">{t.help.qualities}</HelpPanel>
+      </div>
+      <ul className="mt-5 flex flex-col gap-5">
+        {QUALITIES.map((quality) => (
+          <QualityRow key={quality.key} quality={quality} value={r.qualities[quality.key]} />
+        ))}
+      </ul>
+      <div className="mt-5 border-t border-line pt-4">
+        <button
+          type="button"
+          aria-expanded={showAcids}
+          onClick={() => setShowAcids((v) => !v)}
+          className="text-sm font-medium text-accent underline-offset-4 hover:underline"
+        >
+          {showAcids ? q.acidsHide : q.acidsShow}
+        </button>
+        {showAcids && (
+          <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-4">
+            {FATTY_ACIDS.map((a) => (
+              <div key={a} className="flex items-baseline justify-between gap-2 text-xs">
+                <dt className="text-ink-2">{q.acids[a]}</dt>
+                <dd className="font-mono tabular-nums text-ink">{fmtPct(r.acids[a])}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// Confirms a bigger change (a preset, reset, adding or removing an oil…) and offers to undo it.
+function UndoToast({ toast, onUndo, onDismiss, raised }) {
+  const { t } = useLocale();
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="pointer-events-none fixed inset-x-0 z-30 flex justify-center px-4"
+      style={{ bottom: `calc(${raised ? '5.5rem' : '1.5rem'} + env(safe-area-inset-bottom, 0px))` }}
+    >
+      {toast && (
+        <div key={toast.id} className="rise pointer-events-auto flex max-w-full items-center gap-2 rounded-lg bg-ink py-2 pe-2 ps-4 text-sm text-ground shadow-lg">
+          <span className="min-w-0">{toast.message}</span>
+          <button
+            type="button"
+            onClick={onUndo}
+            className="shrink-0 rounded-md px-2.5 py-1 font-semibold text-accent-soft underline-offset-4 hover:underline focus-visible:outline-ground"
+          >
+            {t.undo}
+          </button>
+          <button
+            type="button"
+            onClick={onDismiss}
+            aria-label={t.dismiss}
+            className="shrink-0 rounded-md p-1 opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-ground"
+          >
+            <CloseIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1989,12 +2677,38 @@ function FormulaGuide({ r, state }) {
         ))}
       </ol>
       <p className="text-xs text-muted">{g.rounding}</p>
+
+      <div id="guide-qualities" className="mt-2 flex scroll-mt-6 flex-col gap-3">
+        <h4 className="font-display text-base font-semibold text-ink">{g.qualitiesTitle}</h4>
+        <Prose>{g.qualitiesBody}</Prose>
+        <ul className="divide-y divide-line border-y border-line">
+          {QUALITIES.map((quality) => {
+            const result = fmtN(Math.round(r.qualities[quality.key]));
+            const formula = quality.acids
+              ? quality.acids.map((a) => t.qualities.acids[a].toLowerCase()).join(' + ')
+              : g.weighted[quality.key];
+            const worked = quality.acids
+              ? quality.acids.map((a) => fmtN(r.acids[a])).join(' + ')
+              : r.shares.map(({ oil, share }) => `${fmtFixed(share, 2)} × ${fmtN(oil[quality.key])}`).join(' + ');
+            return (
+              <li key={quality.key} className="flex flex-col gap-1.5 py-3">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                  <span className="text-sm font-semibold text-ink">{t.qualities.items[quality.key].name}</span>
+                  <span className="text-sm text-ink-2">= {formula}</span>
+                </div>
+                <p className="break-words font-mono text-[13px] tabular-nums text-ink">{`${worked} = ${result}`}</p>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </GuideCard>
   );
 }
 
-function Guide({ r, state, update }) {
-  const { t } = useLocale();
+// `apply(patch, message)` changes the recipe and offers to undo it.
+function Guide({ r, state, apply }) {
+  const { t, fmtN, fmtPct, fmtFixed } = useLocale();
   return (
     <section id="guide" aria-labelledby="guide-title" className="mt-14 scroll-mt-6">
       <p className="font-mono text-[11px] uppercase tracking-[0.16em] text-muted">{t.guide.eyebrow}</p>
@@ -2003,10 +2717,17 @@ function Guide({ r, state, update }) {
       </h2>
       <p className="mt-2 max-w-2xl text-[15px] text-ink-2">{t.guide.intro}</p>
       <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
-        <WaterGuide waterRatio={state.waterRatio} lyeConcentration={r.lyeConcentration} onUse={(v) => update({ waterRatio: v })} />
-        <SuperfatGuide superfat={state.superfat} onUse={(v) => update({ superfat: v })} />
+        <WaterGuide
+          waterRatio={state.waterRatio}
+          lyeConcentration={r.lyeConcentration}
+          onUse={(v) => apply({ waterRatio: v }, t.toastSet(t.waterRatio, `${fmtFixed(v, 1)} : 1`))}
+        />
+        <SuperfatGuide superfat={state.superfat} onUse={(v) => apply({ superfat: v }, t.toastSet(t.superfat, fmtPct(v)))} />
       </div>
-      <EssentialOilGuide eoRate={state.eoRate} onUse={(v) => update({ eoRate: v })} />
+      <EssentialOilGuide
+        eoRate={state.eoRate}
+        onUse={(v) => apply({ eoRate: v }, t.toastSet(t.eoUsage, `${fmtN(v)} ${t.gPerKg}`))}
+      />
       <FormulaGuide r={r} state={state} />
     </section>
   );
@@ -2021,14 +2742,59 @@ function SoapCalculator() {
   const [state, setState] = useState(loadState);
   const [lang, setLang] = useState(initialLang);
   const [hoverKey, setHoverKey] = useState(null);
+  const [toast, setToast] = useState(null); // { id, message, prev }
+  const [focusOil, setFocusOil] = useState(null);
   const recipeRef = useRef(null);
   const recipeInView = useInView(recipeRef);
 
   const locale = useMemo(() => makeLocale(lang), [lang]);
   const { t, fmtN, fmtW, fmtU, fmtPct, fmtFixed } = locale;
-  const { oilGrams, unit, waterRatio, pct, superfat, eoRate } = state;
+  const { oilGrams, unit, waterRatio, blend, superfat, eoRate } = state;
   const update = (patch) => setState((s) => ({ ...s, ...patch }));
-  const setPct = (key, v) => setState((s) => ({ ...s, pct: { ...s.pct, [key]: v } }));
+  const setOilPct = (key, v) =>
+    setState((s) => ({ ...s, blend: s.blend.map((b) => (b.key === key ? { ...b, pct: v } : b)) }));
+
+  // Bigger changes go through here so they can be undone from the toast (or Ctrl/⌘ Z).
+  const change = (patch, message) => {
+    setToast({ id: Date.now(), message, prev: state });
+    setState({ ...state, ...patch });
+  };
+  const undo = () => {
+    if (!toast) return;
+    setState(toast.prev);
+    setToast(null);
+  };
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 7000);
+    const onKey = (e) => {
+      // Leave Ctrl/⌘ Z alone while typing, so text fields keep their own undo.
+      const typing = e.target.closest?.('input:not([type="range"]), textarea');
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z' && !typing) {
+        e.preventDefault();
+        setState(toast.prev);
+        setToast(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [toast]);
+
+  // After adding an oil, put the cursor in its percentage box.
+  useEffect(() => {
+    if (!focusOil) return;
+    document.getElementById(`pct-${focusOil}`)?.focus();
+    setFocusOil(null);
+  }, [focusOil]);
+
+  const addOil = (key) => {
+    change({ blend: [...blend, { key, pct: 0 }] }, t.toastAdded(t.oils[key]));
+    setFocusOil(key);
+  };
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
@@ -2066,7 +2832,7 @@ function SoapCalculator() {
             <LanguageToggle value={lang} onChange={setLang} />
             <button
               type="button"
-              onClick={() => setState(DEFAULTS)}
+              onClick={() => change(DEFAULTS, t.toastReset)}
               className="flex items-center gap-1.5 rounded-md border border-line bg-surface px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:bg-well"
             >
               <ResetIcon /> {t.reset}
@@ -2113,6 +2879,7 @@ function SoapCalculator() {
               <Control
                 htmlFor="water-ratio"
                 label={t.waterRatio}
+                help={{ label: t.waterRatio, text: t.help.water, guide: 'guide-water' }}
                 input={
                   <NumberInput
                     id="water-ratio"
@@ -2146,6 +2913,7 @@ function SoapCalculator() {
               id="oils-title"
               title={t.oilsTitle}
               description={t.oilsDesc}
+              help={{ text: t.help.oils, guide: 'guide-formulas' }}
               badge={
                 <span
                   className={`mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 font-mono text-xs font-medium tabular-nums ${
@@ -2157,51 +2925,66 @@ function SoapCalculator() {
                 </span>
               }
             >
-              <PresetButtons pct={pct} onApply={(next) => update({ pct: { ...next } })} />
-              {r.oils.map((o) => (
-                <Control
-                  key={o.key}
-                  htmlFor={`pct-${o.key}`}
-                  label={
-                    <>
-                      <span className="h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ background: o.color }} aria-hidden="true" />
-                      <span className="truncate">{t.oils[o.key]}</span>
-                    </>
-                  }
-                  input={
-                    <NumberInput
-                      id={`pct-${o.key}`}
-                      value={o.pct}
-                      onCommit={(v) => setPct(o.key, v)}
-                      min={L.pct.min}
-                      max={L.pct.max}
-                      step={0.1}
-                      decimals={1}
-                      suffix="%"
-                      widthClass="w-14"
-                    />
-                  }
-                  slider={
-                    <Range
-                      id={`pct-${o.key}-range`}
-                      label={t.pctAria(t.oils[o.key])}
-                      value={o.pct}
-                      min={L.pct.min}
-                      max={L.pct.max}
-                      step={L.pct.step}
-                      fill={o.color}
-                      valueText={fmtPct(o.pct)}
-                      onChange={(v) => setPct(o.key, v)}
-                    />
-                  }
-                  footer={[t.sap(fmtFixed(o.sap, 3)), <span className="font-mono tabular-nums text-ink-2">{fmtW(o.grams)}</span>]}
-                />
-              ))}
+              <PresetButtons
+                blend={blend}
+                onApply={(p) => change({ blend: presetBlend(p) }, t.toastPreset(t.presets[p.id]))}
+              />
+              {r.oils.map((o) => {
+                const name = t.oils[o.key];
+                return (
+                  <Control
+                    key={o.key}
+                    htmlFor={`pct-${o.key}`}
+                    label={<span className="truncate">{name}</span>}
+                    input={
+                      <>
+                        <NumberInput
+                          id={`pct-${o.key}`}
+                          value={o.pct}
+                          onCommit={(v) => setOilPct(o.key, v)}
+                          min={L.pct.min}
+                          max={L.pct.max}
+                          step={0.1}
+                          decimals={1}
+                          suffix="%"
+                          widthClass="w-14"
+                        />
+                        {blend.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => change({ blend: blend.filter((b) => b.key !== o.key) }, t.toastRemoved(name))}
+                            aria-label={t.removeOil(name)}
+                            title={t.removeOil(name)}
+                            className="flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-well hover:text-ink"
+                          >
+                            <CloseIcon />
+                          </button>
+                        )}
+                      </>
+                    }
+                    slider={
+                      <Range
+                        id={`pct-${o.key}-range`}
+                        label={t.pctAria(name)}
+                        value={o.pct}
+                        min={L.pct.min}
+                        max={L.pct.max}
+                        step={L.pct.step}
+                        valueText={fmtPct(o.pct)}
+                        onChange={(v) => setOilPct(o.key, v)}
+                      />
+                    }
+                    footer={[t.sap(fmtFixed(o.sap, 3)), <span className="font-mono tabular-nums text-ink-2">{fmtW(o.grams)}</span>]}
+                    note={o.key === 'castor' && o.pct > CASTOR_WARN_ABOVE ? <Notice>{t.castorHigh}</Notice> : null}
+                  />
+                );
+              })}
+              <OilPicker blend={blend} onAdd={addOil} />
               <BlendStatus
-                pct={pct}
+                blend={blend}
                 total={r.pctTotal}
-                onScale={() => update({ pct: normalizeBlend(pct) })}
-                onBalance={() => setPct('olive', round1(Math.max(0, 100 - pct.coconut - pct.castor)))}
+                onScale={() => change({ blend: normalizeBlend(blend) }, t.toastScaled)}
+                onFill={(key) => change({ blend: fillGap(blend, key) }, t.toastFilled(t.oils[key]))}
               />
             </Section>
 
@@ -2209,6 +2992,7 @@ function SoapCalculator() {
               <Control
                 htmlFor="superfat"
                 label={t.superfat}
+                help={{ label: t.superfat, text: t.help.superfat, guide: 'guide-superfat' }}
                 input={
                   <NumberInput
                     id="superfat"
@@ -2239,6 +3023,7 @@ function SoapCalculator() {
               <Control
                 htmlFor="eo-rate"
                 label={t.eoUsage}
+                help={{ label: t.eoUsage, text: t.help.eo, guide: 'guide-eo' }}
                 input={
                   <NumberInput
                     id="eo-rate"
@@ -2273,15 +3058,17 @@ function SoapCalculator() {
           {/* Output */}
           <div className="flex min-w-0 flex-col gap-6">
             <RecipeCard r={r} state={state} hoverKey={hoverKey} onHover={setHoverKey} cardRef={recipeRef} />
+            <QualitiesCard r={r} />
             <BreakdownCard r={r} hoverKey={hoverKey} onHover={setHoverKey} />
           </div>
         </div>
 
-        <Guide r={r} state={state} update={update} />
+        <Guide r={r} state={state} apply={change} />
 
         <footer className="mt-8 max-w-2xl text-xs leading-relaxed text-muted">{t.footer}</footer>
 
         {!recipeInView && <SummaryBar r={r} />}
+        <UndoToast toast={toast} onUndo={undo} onDismiss={() => setToast(null)} raised={!recipeInView} />
       </div>
     </LocaleContext.Provider>
   );

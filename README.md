@@ -1,6 +1,6 @@
 # soap-calculator
 
-A cold-process soap recipe calculator in a single HTML file, in English, French and Arabic. Enter your oil blend, superfat, water-to-lye ratio and essential oil rate, and it gives the exact weight of every ingredient in grams, updating as you change any input.
+A cold-process soap recipe calculator in a single HTML file, in English, French and Arabic. Build an oil blend from 17 common soapmaking oils, set the superfat, water-to-lye ratio and essential oil rate, and it gives the exact weight of every ingredient in grams, plus the bar's predicted qualities (hardness, cleansing, lather and so on). Everything updates as you change any input.
 
 Built with React 18, Tailwind CSS (Play CDN) and in-browser JSX via Babel standalone. There is no build step and nothing to install.
 
@@ -49,13 +49,25 @@ On the first visit the page picks French or Arabic if the browser is set to one 
 
 ### Oil percentages
 
-| Oil | Default | NaOH SAP |
-|---|---|---|
-| Olive oil | 80% | 0.135 |
-| Coconut oil (76°) | 15% | 0.183 |
-| Castor oil | 5% | 0.128 |
+The default blend is olive oil 80%, coconut oil (76°) 15% and castor oil 5%.
 
-Presets set all three at once:
+**Add an oil** opens a list of the oils not yet in the recipe. Each one shows its SAP value and how hard, cleansing and conditioning a soap made only from it would be, so you can see what it brings. A new oil starts at 0%, and the cursor moves to its percentage box. A recipe can have up to 8 oils. The **×** next to an oil removes it (the last oil can't be removed).
+
+| Oil | NaOH SAP | Oil | NaOH SAP |
+|---|---|---|---|
+| Olive oil | 0.135 | Sweet almond oil | 0.139 |
+| Coconut oil (76°) | 0.183 | Avocado oil | 0.133 |
+| Castor oil | 0.128 | Sunflower oil | 0.135 |
+| Shea butter | 0.128 | Sunflower oil (high oleic) | 0.135 |
+| Cocoa butter | 0.138 | Rice bran oil | 0.133 |
+| Mango butter | 0.136 | Hemp seed oil | 0.138 |
+| Palm oil | 0.142 | Lard | 0.141 |
+| Palm kernel oil | 0.176 | Beef tallow | 0.143 |
+| Babassu oil | 0.175 | | |
+
+All oil data (SAP, iodine, INS and fatty acids) comes from [SoapCalc's oil table](https://soapcalc.net/oil-list). Olive, coconut and castor match the SAP values this calculator started with.
+
+Presets replace the blend with olive, coconut and castor:
 
 | Preset | Olive / Coconut / Castor |
 |---|---|
@@ -64,10 +76,12 @@ Presets set all three at once:
 | Castile Hybrid | 85 / 10 / 5 |
 | Pure Castile | 100 / 0 / 0 |
 
-The blend must total 100%. When it doesn't, a warning shows how far off it is, and the recipe and charts fade with a note explaining why. Two buttons fix it:
+The blend must total 100%. When it doesn't, a warning shows how far off it is, and the recipe, qualities and charts fade with a note explaining why. Two buttons fix it:
 
 - **Scale to 100%** keeps the oils in proportion and scales them up or down.
-- **Fill the gap with olive oil** leaves coconut and castor alone and sets olive to whatever is left.
+- **Fill the gap** sets one oil to whatever is left and leaves the others alone. It uses olive oil when the recipe has it, otherwise the largest oil.
+
+Above 10%, castor oil gets a warning under its slider: it tends to make a soft, sticky bar, and most recipes use 5–8%.
 
 The slider moves in 1% steps. Type into the number box for tenths (for example 33.3%).
 
@@ -113,14 +127,36 @@ Essential oil (30 g/kg)          30.00 g
 Total wet batch               1,434.27 g
 ```
 
+### Bar qualities
+
+A card under the recipe predicts how the bar will behave, using [SoapCalc's method](https://soapcalc.net/soapqualities). Each quality has a meter: the shaded band is the usual range and the dot is your recipe. A label says whether the value is low, in range or high, and a line explains what that means for the bar.
+
+| Quality | Usual range | Higher means |
+|---|---|---|
+| Hardness | 29–54 | a harder, longer-lasting bar |
+| Cleansing | 12–22 | more oil-stripping; can feel drying |
+| Conditioning | 44–69 | more moisturizing |
+| Bubbly lather | 14–46 | more big, fluffy bubbles |
+| Creamy lather | 16–48 | denser, more stable lather |
+| Iodine | 41–70 | softer bar, more prone to rancidity |
+| INS | 136–165 | harder bar; 160 is often cited as ideal |
+
+Being outside a range isn't an error. An 80% olive bar, for example, is low on hardness and high on conditioning, which is why castile-style soaps need a long cure. **Show the fatty acid profile** lists the blend's eight fatty acids.
+
 ### Batch breakdown chart
 
-Two stacked bars:
+- **Oil blend**: one bar per oil, showing its share of the total oil weight.
+- **Wet batch**: a stacked bar of oils, water, lye and essential oil as shares of the total weight.
 
-- **Oil blend**: each oil's share of the total oil weight.
-- **Wet batch**: oils, water, lye and essential oil as shares of the total weight.
+Point at an oil bar, a segment, a legend entry or a line in the recipe card to highlight the matching item and see its weight. Keyboard users can Tab through the wet-batch segments.
 
-Point at a segment, a legend entry or a line in the recipe card to highlight the matching item and see its weight. Keyboard users can Tab through the segments.
+### Help
+
+A **?** next to Water to lye ratio, Oil percentages, Superfat, Essential oil usage and Bar qualities opens a short explanation in place, with a **More in the guide** link to the matching part of the soapmaking guide.
+
+### Undo
+
+Changes that replace several values at once show a message at the bottom of the screen with an **Undo** button. This covers presets, Reset to defaults, adding or removing an oil, Scale to 100%, Fill the gap, and the guide's **Use** buttons. The message stays for 7 seconds. While it's showing, Ctrl+Z (⌘Z on a Mac) also undoes, except while you're typing in a number box. Moving a slider or typing a value doesn't show the message.
 
 ### Soapmaking guide
 
@@ -129,17 +165,17 @@ A reference section at the bottom of the page, in all three languages. The **Rea
 - **Water to lye ratio**: what changing the amount of water does, and what to expect at 1.5, 2.0, 2.5 and 3.0 : 1, with each ratio's lye concentration.
 - **Superfat by use**: suggested ranges for hair (shampoo bars, 4–5%), hands (4–6%), body (5–7%), and face or dry and sensitive skin (7–8%), with the reasons.
 - **Essential oils**: lavender, rosemary, peppermint, lemon, sweet orange, tea tree, eucalyptus and cedarwood. Each card gives the scent, what it suits, what it pairs with, a typical rate in g/kg, and a note on how it behaves in soap. Each card also says whether your current rate is below, within or above the oil's typical range. A safety note covers IFRA limits, oils to keep out of children's soap, and oils to avoid.
-- **How the numbers are calculated**: every formula in the order the calculator runs them, each worked with your current recipe, so the numbers change as you edit.
+- **How the numbers are calculated**: every formula in the order the calculator runs them, then the bar quality formulas, each worked with your current recipe, so the numbers change as you edit.
 
-Most suggestions have a **Use** button that applies the value to the calculator, for example **Use 4.5%** on the hair row. When the calculator already uses that value, the button is replaced by **Current**. The essential oil buttons set the total rate, so if you blend several oils, the rate covers the whole blend.
+Most suggestions have a **Use** button that applies the value to the calculator, for example **Use 4.5%** on the hair row, and offers to undo it. When the calculator already uses that value, the button is replaced by **Current**. The essential oil buttons set the total rate, so if you blend several oils, the rate covers the whole blend.
 
 The ranges are common starting points from soapmaking practice, not limits. For each essential oil's maximum, check your supplier's safety data or IFRA certificate.
 
 ### Saved state and reset
 
-Your last recipe is saved in the browser's `localStorage` under the key `cp-soap-calculator:v1`, and your language choice under `cp-soap-calculator:lang`, so both are still there when you reopen the page. The save is per browser and per device. If storage is blocked, for example in a private window, the calculator still works but starts from the defaults each time.
+Your last recipe is saved in the browser's `localStorage` under the key `cp-soap-calculator:v1`, and your language choice under `cp-soap-calculator:lang`, so both are still there when you reopen the page. Recipes saved before oils could be added still load. The save is per browser and per device. If storage is blocked, for example in a private window, the calculator still works but starts from the defaults each time.
 
-**Reset to defaults** restores 1000 g, 80/15/5, 5% superfat, 2:1 water and 30 g/kg essential oil. It does not change the language.
+**Reset to defaults** restores 1000 g, olive/coconut/castor at 80/15/5, 5% superfat, 2:1 water and 30 g/kg essential oil. It does not change the language, and it can be undone.
 
 ## How the numbers are calculated
 
@@ -154,6 +190,20 @@ Your last recipe is saved in the browser's `localStorage` under the key `cp-soap
 | Lye concentration | NaOH lye / (NaOH lye + water), which is 1 / (1 + ratio) |
 
 Weights are displayed to two decimal places. Calculations are not rounded along the way.
+
+Bar qualities use each oil's share of the blend (its percentage divided by the blend's total, so they stay meaningful while the oils don't add up to 100%). The blend's fatty acids are the share-weighted sum of each oil's fatty acids, and then:
+
+| Quality | Formula |
+|---|---|
+| Hardness | lauric + myristic + palmitic + stearic |
+| Cleansing | lauric + myristic |
+| Conditioning | oleic + linoleic + linolenic + ricinoleic |
+| Bubbly lather | lauric + myristic + ricinoleic |
+| Creamy lather | palmitic + stearic + ricinoleic |
+| Iodine | Σ (oil share × oil's iodine value) |
+| INS | Σ (oil share × oil's INS value) |
+
+Qualities are shown rounded to whole numbers, and the low / in range / high label uses the rounded value. At the defaults they come to Hardness 25, Cleansing 10, Conditioning 72, Bubbly 15, Creamy 20, Iodine 74 and INS 127.
 
 ### Worked example (defaults)
 
@@ -172,16 +222,19 @@ Weights are displayed to two decimal places. Calculations are not rounded along 
 
 All of the code is in the `<script type="text/babel">` block in `index.html`, and the colours are in the `<style>` block above it.
 
-### Change SAP values, defaults or presets
+### Change oil data, defaults or presets
 
 Edit these constants near the top of the script:
 
-- `OILS`: each oil's `key`, NaOH `sap` value and chart `color`
-- `PRESETS`: preset buttons, as `{ id, pct: { olive, coconut, castor } }`
-- `DEFAULTS`: the starting recipe, also used by **Reset to defaults**
+- `OIL_LIBRARY`: every oil you can add, one `defineOil(key, sap, iodine, ins, [lauric, myristic, palmitic, stearic, ricinoleic, oleic, linoleic, linolenic])` line each
+- `PRESETS`: preset buttons, as `{ id, pct: { oilKey: percent, … } }`
+- `DEFAULTS`: the starting recipe, also used by **Reset to defaults**; its `blend` is a list of `{ key, pct }`
 - `LIMITS`: the min, max and step for every slider and number box
+- `MAX_OILS`: how many oils a recipe can have (8)
+- `CASTOR_WARN_ABOVE`: the castor oil percentage that triggers its warning (10)
+- `QUALITIES`: each bar quality's fatty acids, usual range (`min`, `max`) and meter `scale`
 
-Display names are kept separately, in `STRINGS` (see [Edit or add translations](#edit-or-add-translations)). If you change an SAP value, also update the sentence at the bottom of the page: it is the `footer` string in every language.
+Display names are kept separately, in `STRINGS` (see [Edit or add translations](#edit-or-add-translations)).
 
 ### Change the guide
 
@@ -207,17 +260,14 @@ To change wording, edit the string in the right block. To add a language:
 
 Numbers in the interface go through the formatters from `makeLocale` (`fmtG`, `fmtN`, `fmtFixed`, `fmtPct`, `fmtW`, `fmtU`), so they follow each language's style. Use those rather than `toFixed` or a hard-coded `%` when you add text with numbers in it.
 
-### Add an oil
+### Add an oil to the list
 
-1. Add an entry to `OILS`, for example `{ key: 'shea', sap: 0.128, color: 'var(--s-shea)' }`.
-2. Add its name to `oils` in every `STRINGS` block, for example `shea: 'Shea butter'`, `shea: 'Beurre de karité'` and `shea: 'زبدة الشيا'`.
-3. Define `--s-shea` in the `:root` block and in both dark-mode blocks (`@media (prefers-color-scheme: dark)` and `:root[data-theme="dark"]`).
-4. Add the new key to `DEFAULTS.pct` and to every preset's `pct`.
-5. Update **Fill the gap with olive oil**. It assumes the three original oils: see `canBalance` in `BlendStatus` and the `onBalance` handler in `SoapCalculator`.
+1. Add a `defineOil(...)` line to `OIL_LIBRARY` with its NaOH SAP value, iodine value, INS value and eight fatty acid percentages. SoapCalc's [oil table](https://soapcalc.net/oil-list) lists these for 150 oils; its SAP values there are KOH, so multiply by 40 / 56.1 for NaOH.
+2. Add its name to `oils` in every `STRINGS` block, for example `jojoba: 'Jojoba oil'`, `jojoba: 'Huile de jojoba'` and `jojoba: 'زيت الجوجوبا'`.
 
-Saved recipes from before the change still load. An oil missing from the saved data falls back to its default percentage.
+It then appears in the **Add an oil** list, sorted by name in each language.
 
-The chart colours were picked as a set and tested to stay distinct for colour-blind readers, in this order: olive, coconut, castor, water, lye, essential oil. If you add or change a colour, check that it is still easy to tell apart from its neighbours in both light and dark mode.
+The chart colours are oils, water, lye and essential oil, tested as a set to stay distinct for colour-blind readers in both light and dark mode. Oils share one colour because each oil is labelled by name, so adding oils doesn't need new colours. If you change a colour, check it is still easy to tell apart from its neighbours.
 
 ### Theme
 
@@ -226,7 +276,7 @@ The page follows the system light or dark setting. Every colour is a CSS custom 
 ### Move it into a React + Tailwind project
 
 1. Copy the script block into a component file such as `SoapCalculator.jsx`.
-2. Replace `const { useState, useMemo, useEffect, useLayoutEffect, useRef, createContext, useContext } = React;` with `import React, { useState, useMemo, useEffect, useLayoutEffect, useRef, createContext, useContext } from 'react';`.
+2. Replace `const { useState, useMemo, useEffect, useLayoutEffect, useRef, useId, createContext, useContext } = React;` with `import React, { useState, useMemo, useEffect, useLayoutEffect, useRef, useId, createContext, useContext } from 'react';`.
 3. Replace the final `ReactDOM.createRoot(...)` line with `export default SoapCalculator;`.
 4. Move everything in the `<style>` block into your global stylesheet: the colour and font tokens, the Arabic rules, the `.range` slider styles (including the `[dir="rtl"]` rule) and the number-input rules.
 5. Copy the `colors` and `fontFamily` entries from the inline `tailwind.config` into your project's Tailwind config. The layout uses logical utilities (`ps-*`, `pe-*`, `ms-*`, `text-start`, `text-end`, `start-0`, `end-0`, `rounded-e-*`) and the `rtl:` variant, which need Tailwind 3.3 or newer.
@@ -243,4 +293,4 @@ README.md    this file
 
 ## Safety
 
-Sodium hydroxide is caustic. Wear goggles and gloves, work somewhere ventilated, and always pour the lye into the water, never water onto lye. Check any new recipe against a second lye calculator before your first batch. This tool uses only the three SAP values listed above, and real oils vary by supplier.
+Sodium hydroxide is caustic. Wear goggles and gloves, work somewhere ventilated, and always pour the lye into the water, never water onto lye. Check any new recipe against a second lye calculator before your first batch. This tool uses one typical SAP value per oil, and real oils vary by supplier and batch, which is one reason to keep a superfat. Bar qualities are predictions from typical fatty acid profiles, not measurements of your soap.
